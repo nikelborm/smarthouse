@@ -21,7 +21,6 @@ export function AdminPanelWrapper() {
         onCollapse={setCollapsedMenu}
         width={300}
       >
-        <div className="logo" />
         <Menu theme="dark" defaultSelectedKeys={pathParts} mode="inline">
           {Object.entries(routes).map(([route, { icon, menuTitle }]) => (
             <Menu.Item key={route} icon={icon}>
@@ -33,20 +32,16 @@ export function AdminPanelWrapper() {
           <Menu.Item key="logout">Logout</Menu.Item>
         </Menu>
       </Sider>
-      <Layout className="site-layout">
-        <Header className="site-layout-background" style={{ padding: 0 }}>
+      <Layout>
+        <Header style={{ background: '#fff', padding: 0 }}>
           <PageHeader
-            className="site-page-header"
             title={routes[deepestPathPart as RoutesEnum].pageTitle}
             subTitle={routes[deepestPathPart as RoutesEnum].description}
           />
         </Header>
         <div style={{ margin: '16px', opacity: '0' }}></div>
         <Content style={{ margin: '0 16px' }}>
-          <div
-            className="site-layout-background"
-            style={{ padding: 24, minHeight: 360 }}
-          >
+          <div style={{ background: '#fff', padding: 24, minHeight: 360 }}>
             <Outlet />
           </div>
         </Content>
