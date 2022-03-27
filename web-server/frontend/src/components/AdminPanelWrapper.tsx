@@ -10,7 +10,7 @@ const { Header, Content, Footer, Sider } = Layout;
 export function AdminPanelWrapper() {
   const [isMenuCollapsed, setCollapsedMenu] = useState(false);
 
-  const { deepestPathPart, path, pathParts } = usePath();
+  const { deepestPathPart, pathParts } = usePath();
   if (deepestPathPart === 'adminPanel') return <Navigate to="profile" />;
 
   return (
