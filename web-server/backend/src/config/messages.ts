@@ -3,7 +3,6 @@ import { pluralForm, startsWithCapital } from 'src/tools';
 const messagesRepeating = {
   notEnoughAccess: 'Not enough access level to',
   moreThanOne: "There's more than one",
-  cannotCreateBudgetVersion: 'Cannot create a budget version:',
   validationError: 'Validation error:',
 };
 
@@ -11,7 +10,6 @@ export const messages = {
   auth: {
     incorrectUser: 'User with this email not found',
     incorrectPassword: 'Incorrect password',
-    userDisabled: 'This user is blocked. Please contact the administrator',
     userHasNoAccessScopes:
       'This user has no access scopes. The user is not assigned to any access scope and has no additional role. Please contact the administrator',
     developmentOnly: 'Development only',
@@ -22,15 +20,11 @@ export const messages = {
       'Token in Authorization header is not a valid JWT token, try requesting a new one',
   },
   user: {
-    missingUpdatedInFound: 'Attempted to update non-existing users',
-    noSelfBan: 'Cannot enable/disable yourself',
     exists: 'User with this email already exists',
   },
   accessScope: {
     notSingleAdminScope: `${messagesRepeating.moreThanOne} Admin access scope in the database`,
     notSingleSuperAdminScope: `${messagesRepeating.moreThanOne} Super Admin access scope in the database`,
-    forbidsUpdatingAdminScope:
-      'This endpoint does not allow updating Admin Access Scopes',
     cannotPromoteYourself: 'Cannot set additional role for yourself',
   },
   repo: {

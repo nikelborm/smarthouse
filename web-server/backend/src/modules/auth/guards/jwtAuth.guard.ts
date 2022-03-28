@@ -39,9 +39,12 @@ export class JwtAuthGuard implements CanActivate {
 
     const request = context.getArgByIndex<Request>(0);
 
-    const userModel = await this.authService.verify(
-      request.headers.authorization,
-    );
+    const authHeader = request.headers.authorization;
+
+    if (!authHeader)
+      throw new UnauthorizedException(messages.auth.missingAuthHeader);
+
+    const userModel = await this.authService.verify(authHeader);
 
     request.user = userModel;
 

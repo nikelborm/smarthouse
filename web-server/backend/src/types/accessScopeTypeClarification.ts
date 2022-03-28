@@ -5,5 +5,3 @@ export enum AccessScopeTypeClarification {
   UPDATE = 'update',
   DELETE = 'delete',
 }
-
-console.log(AccessScopeTypeClarification.CREATE);

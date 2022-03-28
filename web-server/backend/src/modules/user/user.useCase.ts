@@ -62,8 +62,6 @@ export class UserUseCase {
 
   async setUserPassword(id: number, password: string) {
     const candidate = await this.userRepo.getOneById(id);
-    if (!candidate)
-      throw new BadRequestException(messages.user.missingUpdatedInFound);
     const updatedUser = this.createUserModel({ ...candidate, password });
     return this.userRepo.updateOnePlain(id, updatedUser);
   }
