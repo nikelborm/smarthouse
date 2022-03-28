@@ -1,0 +1,100 @@
+import { BadRequestException, Injectable } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { messages } from 'src/config';
+import {
+  createManyWithRelations,
+  createOneWithRelations,
+  NewEntity,
+  PlainEntityWithoutId,
+  UpdatedEntity,
+  updateOnePlain,
+  updateOneWithRelations,
+} from 'src/tools';
+import { ILike, Repository } from 'typeorm';
+import { User } from '../model';
+
+@Injectable()
+export class UserRepo {
+  constructor(
+    @InjectRepository(User)
+    private readonly repo: Repository<User>,
+  ) {}
+
+  findManyWithAccessScopes(search?: string) {
+    return this.repo.find({
+      where: search
+        ? [
+            { firstName: ILike(`%${search}%`) },
+            { lastName: ILike(`%${search}%`) },
+            { email: ILike(`%${search}%`) },
+          ]
+        : void 0,
+      relations: ['accessScopes'],
+    });
+  }
+
+  async getOneByIdWithAccessScopes(id: number) {
+    const user = await this.repo
+      .createQueryBuilder('user')
+      .leftJoinAndSelect('user.accessScopes', 'accessScopes')
+      .where('user.id = :userId', { userId: id })
+      .getOne();
+    if (!user)
+      throw new BadRequestException(
+        messages.repo.common.cantGetNotFoundById('user', id),
+      );
+    return user;
+  }
+
+  getAll() {
+    return this.repo.find();
+  }
+
+  async getOneById(id: number) {
+    const user = await this.repo.findOne({
+      where: { id },
+    });
+    if (!user)
+      throw new BadRequestException(
+        messages.repo.common.cantGetNotFoundById('user', id),
+      );
+    return user;
+  }
+
+  async getOneByEmail(userEmail: string) {
+    return await this.repo.findOne({ where: { email: userEmail } });
+  }
+
+  async findOneByName(firstName: string, lastName: string) {
+    return await this.repo.findOne({ where: { firstName, lastName } });
+  }
+
+  createOneWithRelations(newUser: NewEntity<User>) {
+    return createOneWithRelations(this.repo, newUser, 'user');
+  }
+
+  createManyWithRelations(newUsers: NewEntity<User>[]) {
+    return createManyWithRelations(this.repo, newUsers, 'user');
+  }
+
+  updateOnePlain(id: number, updated: PlainEntityWithoutId<User>) {
+    return updateOnePlain(this.repo, id, updated, 'user');
+  }
+
+  updateOneWithRelations(newUser: UpdatedEntity<User>) {
+    return updateOneWithRelations(this.repo, newUser, 'user');
+  }
+
+  findOneByEmailWithAccesScopesAndPassword(email: string) {
+    return this.repo
+      .createQueryBuilder('user')
+      .leftJoinAndSelect('user.accessScopes', 'accessScopes')
+      .addSelect(['user.salt', 'user.passwordHash'])
+      .where('LOWER(email) = LOWER(:email)', { email })
+      .getOne();
+  }
+
+  async delete(id: number) {
+    await this.repo.delete(id);
+  }
+}
