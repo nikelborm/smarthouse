@@ -8,8 +8,11 @@ export function remapToIndexedObject<T extends { id: IndexKey }>(
   array: T[],
   getIndexKey: IndexKeyGetter<T> = (val) => val.id,
 ) {
-  return array.reduce((acc, val) => {
-    acc[getIndexKey(val)] = val;
-    return acc;
-  }, Object.create(null) as IndexedObject<T>);
+  const map: IndexedObject<T> = Object.create(null);
+
+  for (const element of array) {
+    map[getIndexKey(element)] = element;
+  }
+
+  return map;
 }

@@ -14,6 +14,7 @@ export const validateExistingId = (params: {
       throw new BadRequestException(params.errorText);
     return;
   }
+
   if (params.entities.some(shouldThrowError))
     throw new BadRequestException(params.errorText);
 };

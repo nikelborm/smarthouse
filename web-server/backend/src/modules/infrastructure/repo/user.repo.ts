@@ -34,11 +34,10 @@ export class UserRepo {
   }
 
   async getOneByIdWithAccessScopes(id: number) {
-    const user = await this.repo
-      .createQueryBuilder('user')
-      .leftJoinAndSelect('user.accessScopes', 'accessScopes')
-      .where('user.id = :userId', { userId: id })
-      .getOne();
+    const user = await this.repo.findOne({
+      where: { id },
+      relations: ['accessScopes'],
+    });
     if (!user)
       throw new BadRequestException(
         messages.repo.common.cantGetNotFoundById('user', id),
