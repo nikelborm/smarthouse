@@ -6,8 +6,7 @@
   "private": true,
   "license": "UNLICENSED",
   "scripts": {
-    "prebuild": "rimraf dist",
-    "build": "yarn; nest build",
+    "build": "yarn; rimraf dist; nest build",
     "mock": "cd ../mock && yarn devMock && cd ../backend",
     "prestart": "yarn; yarn pgrun; yarn pgstart; yarn pgrm; yarn migrate",
     "start": "nest start",
