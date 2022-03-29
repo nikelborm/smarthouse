@@ -13,6 +13,7 @@
     "@typescript-eslint/parser": "^4.19.0",
     "antd": "^4.19.2",
     "autobind-decorator": "^2.4.0",
+    "cross-env": "^7.0.3",
     "date-fns": "^2.21.3",
     "eslint": "^7.22.0",
     "eslint-config-airbnb": "^18.2.1",
@@ -38,7 +39,7 @@
     "start": "react-scripts start",
     "build": "react-scripts build",
     "startrpi": "react-scripts --max_old_space_size=4096 start",
-    "buildrpi": "react-scripts --max_old_space_size=4096 build",
+    "buildrpi": "yarn cross-env GENERATE_SOURCEMAP=false yarn react-scripts --max_old_space_size=4096 build",
     "eject": "react-scripts eject"
   },
   "eslintConfig": {
