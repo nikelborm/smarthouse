@@ -10,8 +10,8 @@ import {
 import { Endpoint } from './';
 
 @Entity({ name: 'route' })
-@Index(['source_endpoint_id', 'sink_endpoint_id'], { unique: true })
-@Unique(['source_endpoint_id', 'sink_endpoint_id'])
+@Index(['sourceEndpointId', 'sinkEndpoint'], { unique: true })
+@Unique(['sourceEndpointId', 'sinkEndpoint'])
 export class Route {
   @PrimaryGeneratedColumn({ name: 'route_id' })
   id!: number;

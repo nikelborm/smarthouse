@@ -71,6 +71,7 @@ export class Endpoint {
   @Column({
     type: 'enum',
     enum: EndpointType,
+    name: 'endpoint_type',
     nullable: false,
   })
   type!: EndpointType;

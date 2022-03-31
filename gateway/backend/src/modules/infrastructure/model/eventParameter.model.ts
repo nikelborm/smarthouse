@@ -6,7 +6,7 @@ import {
   OneToMany,
   JoinColumn,
 } from 'typeorm';
-import { ParameterTypeToEventAssociation, DataValidator } from './';
+import { ParameterToEventAssociation, DataValidator } from './';
 
 @Entity({ name: 'event_parameter' })
 export class EventParameter {
@@ -48,10 +48,10 @@ export class EventParameter {
   dataValidatorId!: number;
 
   @OneToMany(
-    () => ParameterTypeToEventAssociation,
+    () => ParameterToEventAssociation,
     (parameterAssociation) => parameterAssociation.eventParameter,
   )
-  eventAssociations!: ParameterTypeToEventAssociation[];
+  eventAssociations!: ParameterToEventAssociation[];
 
   @Column({
     nullable: false,
