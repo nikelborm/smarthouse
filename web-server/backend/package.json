@@ -19,13 +19,13 @@
     "dbdoc:publish": "dbdocs build src/modules/infrastructure/migration/all_migrations.dbml --project Smarthouse",
     "migrate": "yarn build && yarn typeorm migration:run",
     "migrate-undo": "yarn typeorm migration:revert",
-    "pgrun": "docker run --name smarthouse-pgdocker -e POSTGRES_PASSWORD=smarthouse -e POSTGRES_USER=smarthouse -e POSTGRES_DB=smarthouse -d -p 5433:5432 -v $HOME/pg_smarthouse:/var/lib/postgresql/data postgres",
-    "pgstart": "docker start smarthouse-pgdocker",
-    "psql": "docker exec -it smarthouse-pgdocker psql -U smarthouse",
-    "pgstop": "docker stop smarthouse-pgdocker",
+    "pgrun": "docker run --name smarthouse_webserver_pgdocker -e POSTGRES_PASSWORD=smarthouse_webserver_pgdocker -e POSTGRES_USER=smarthouse_webserver_pgdocker -e POSTGRES_DB=smarthouse_webserver_pgdocker -d -p 5500:5432 -v $HOME/smarthouse_webserver_pgdocker:/var/lib/postgresql/data postgres",
+    "pgstart": "docker start smarthouse_webserver_pgdocker",
+    "psql": "docker exec -it smarthouse_webserver_pgdocker psql -U smarthouse_webserver_pgdocker",
+    "pgstop": "docker stop smarthouse_webserver_pgdocker",
     "pgrm": "yarn typeorm schema:drop",
-    "pgrmhard": "sudo rm -rf ~/pg_smarthouse; docker stop smarthouse-pgdocker; docker rm smarthouse-pgdocker; yarn pgrun; yarn pgstart;",
-    "pgip": "docker inspect -f '{{range.NetworkSettings.Networks}}{{.IPAddress}}{{end}}' smarthouse-pgdocker"
+    "pgrmhard": "sudo rm -rf ~/smarthouse_webserver_pgdocker; docker stop smarthouse_webserver_pgdocker; docker rm smarthouse_webserver_pgdocker; yarn pgrun; yarn pgstart;",
+    "pgip": "docker inspect -f '{{range.NetworkSettings.Networks}}{{.IPAddress}}{{end}}' smarthouse_webserver_pgdocker"
   },
   "dependencies": {
     "@nestjs/axios": "^0.0.7",

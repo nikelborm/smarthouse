@@ -12,8 +12,8 @@
     "devMock": "yarn preAll; yarn pgrun; yarn pgstart; yarn migrateWithClearing; cd ./dist/mock/src; node main",
     "prodMockWithClearing": "yarn preAll; yarn migrateWithClearing; cd ./dist/mock/src; node main",
     "prodMock": "yarn preAll; yarn migrate; cd ./dist/mock/src; node main",
-    "pgrun": "docker run --name smarthouse-pgdocker -e POSTGRES_PASSWORD=smarthouse -e POSTGRES_USER=smarthouse -e POSTGRES_DB=smarthouse -d -p 5433:5432 -v $HOME/pg_smarthouse:/var/lib/postgresql/data postgres",
-    "pgstart": "docker start smarthouse-pgdocker",
+    "pgstart": "cd ../backend; yarn pgstart; cd ../mock",
+    "pgrun": "cd ../backend; yarn pgrun; cd ../mock",
     "terminalMock": "asd=$(wget --retry-connrefused -b --quiet -t 0 -O - http://localhost:5000/api/filler/fillDB | grep -o '[0-9]*'); echo $asd; kill -s 9 $asd"
   },
   "dependencies": {
