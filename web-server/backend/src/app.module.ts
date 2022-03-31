@@ -6,6 +6,8 @@ import { AccessLogMiddleware } from './tools';
 import { UserModule } from './modules/user';
 import { InfrastructureModule } from './modules/infrastructure';
 import { join, resolve } from 'path';
+import { AuthModule } from './modules/auth';
+import { AccessScopeModule } from './modules/accessScope';
 
 @Module({
   imports: [
@@ -19,6 +21,8 @@ import { join, resolve } from 'path';
     }),
     InfrastructureModule,
     UserModule,
+    AuthModule,
+    AccessScopeModule,
   ],
 })
 export class AppModule {
