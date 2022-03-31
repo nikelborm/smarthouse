@@ -9,11 +9,11 @@ import {
 } from 'typeorm';
 import { EventParameter, Event } from '.';
 
-@Entity({ name: 'parameter_type_to_event_association' })
-@Index(['event_parameter_id', 'event_id'], { unique: true })
-@Unique(['event_parameter_id', 'event_id'])
-export class ParameterTypeToEventAssociation {
-  @PrimaryGeneratedColumn({ name: 'parameter_type_to_event_association_id' })
+@Entity({ name: 'parameter_to_event_association' })
+@Index(['eventParameterId', 'eventId'], { unique: true })
+@Unique(['eventParameterId', 'eventId'])
+export class ParameterToEventAssociation {
+  @PrimaryGeneratedColumn({ name: 'parameter_to_event_association_id' })
   id!: number;
 
   @ManyToOne(

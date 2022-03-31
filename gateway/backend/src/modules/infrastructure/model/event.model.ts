@@ -1,6 +1,6 @@
 import { EventType } from 'src/types';
 import { Entity, Column, PrimaryGeneratedColumn, OneToMany } from 'typeorm';
-import { Endpoint, ParameterTypeToEventAssociation } from '.';
+import { Endpoint, ParameterToEventAssociation } from '.';
 
 @Entity({ name: 'event' })
 export class Event {
@@ -41,6 +41,7 @@ export class Event {
 
   @Column({
     type: 'enum',
+    name: 'event_type',
     enum: EventType,
     nullable: false,
   })
@@ -50,10 +51,10 @@ export class Event {
   endpoints!: Endpoint[];
 
   @OneToMany(
-    () => ParameterTypeToEventAssociation,
+    () => ParameterToEventAssociation,
     (parameterAssociation) => parameterAssociation.event,
   )
-  parameterAssociations!: ParameterTypeToEventAssociation[];
+  parameterAssociations!: ParameterToEventAssociation[];
 
   @Column({
     name: 'event_hex_color',

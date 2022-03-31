@@ -3,7 +3,7 @@ import { PostgresConnectionOptions } from 'typeorm/driver/postgres/PostgresConne
 
 export const dataSourceConfig: PostgresConnectionOptions = {
   type: 'postgres' as const,
-  host: '172.17.0.2',
+  host: 'localhost',
   port: 5501,
   username: 'smarthouse_gateway_pgdocker',
   password: 'smarthouse_gateway_pgdocker',
