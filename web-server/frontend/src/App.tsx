@@ -3,13 +3,16 @@ import { AdminPanelWrapper } from 'components';
 import {
   Events,
   Login,
-  Messages,
-  Profile,
+  MessagesDashboard,
   Register,
   Root,
   RoutesGraph,
+  Clients,
+  SpecificClient,
+  SpecificUser,
+  Users,
+  SpecificEvent,
 } from 'pages';
-import Clients from 'pages/Clients/Clients';
 import { usePath } from 'hooks';
 
 function App() {
@@ -24,11 +27,23 @@ function App() {
       </Route>
 
       <Route path="/adminPanel" element={<AdminPanelWrapper />}>
-        <Route path="profile" element={<Profile />} />
-        <Route path="clients" element={<Clients />} />
         <Route path="routesGraph" element={<RoutesGraph />} />
+
+        <Route path="clients" element={<Clients />} />
+
+        {/* TODO: add page below */}
+        <Route path="client/:id" element={<SpecificClient />} />
+
+        <Route path="users" element={<Users />} />
+
+        <Route path="users/:id" element={<SpecificUser />} />
+
         <Route path="events" element={<Events />} />
-        <Route path="messages" element={<Messages />} />
+
+        <Route path="events/:id" element={<SpecificEvent />} />
+
+        <Route path="messagesDashboard" element={<MessagesDashboard />} />
+
         <Route path="*" element={<Navigate to="profile" />} />
       </Route>
 
