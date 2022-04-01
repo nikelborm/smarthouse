@@ -7,7 +7,6 @@ import {
   UpdatedEntity,
   updateOneWithRelations,
 } from 'src/tools';
-import { AccessScopeType } from 'src/types';
 import { Repository } from 'typeorm';
 import { AccessScope } from '../model';
 
@@ -17,19 +16,6 @@ export class AccessScopeRepo {
     @InjectRepository(AccessScope)
     private readonly repo: Repository<AccessScope>,
   ) {}
-
-  async getManyAdminAndSuperAdminAccessScopes() {
-    return this.repo.find({
-      where: [
-        {
-          type: AccessScopeType.ADMIN,
-        },
-        {
-          type: AccessScopeType.SUPER_ADMIN,
-        },
-      ],
-    });
-  }
 
   async getOneById(id: number) {
     const accessScope = await this.repo.findOne({ where: { id } });
