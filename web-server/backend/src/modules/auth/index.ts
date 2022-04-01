@@ -1,5 +1,5 @@
 import { Request } from 'express';
-import type { AccessScopeType, AccessScopeTypeClarification } from 'src/types';
+import type { AccessScopeType } from 'src/types';
 
 export interface UserAuthTokenPayload {
   user: {
@@ -16,8 +16,6 @@ export interface UserAuthInfo {
   accessScopes: {
     id: number;
     type: AccessScopeType;
-    name: string;
-    typeClarification?: AccessScopeTypeClarification;
   }[];
 }
 
@@ -26,13 +24,11 @@ export interface AuthedRequest extends Request {
 }
 
 export {
-  Role,
-  Roles,
+  IAccessEnum,
+  AccessEnum,
+  AllowedFor,
   Public,
   AuthorizedOnly,
-  ManagerOrSeniorOnly,
-  AdminOnly,
-  SuperAdminOnly,
   DevelopmentOnly,
 } from './decorators';
 

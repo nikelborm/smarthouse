@@ -1,28 +1,30 @@
 import { applyDecorators, SetMetadata } from '@nestjs/common';
 import { ApiBearerAuth, ApiUnauthorizedResponse } from '@nestjs/swagger';
+import { AccessScopeType } from 'src/types';
 
-export enum Role {
+export enum EndpointAccess {
   PUBLIC = 'public',
+  FORBIDDEN = 'forbidden',
   AUTHORIZED = 'authorized',
-  MANAGER_OR_SENIOR = 'managerOrSenior',
-  ADMIN = 'admin',
-  SUPER_ADMIN = 'superAdmin',
   DEVELOPMENT_ONLY = 'developmentOnly',
 }
 
-export const ROLE_KEY = Symbol('role');
+export type IAccessEnum = AccessScopeType | EndpointAccess;
+export const AccessEnum = { ...AccessScopeType, ...EndpointAccess };
+export type UserLevelScopes = AccessScopeType | AccessScopeType[];
 
-export function Roles(...roles: Role[]) {
+export const ALLOWED_SCOPES_KEY = Symbol('ALLOWED_SCOPES_KEY');
+
+export type AllowedForArgs = (EndpointAccess | UserLevelScopes)[];
+
+export function AllowedFor(...allowedScopes: AllowedForArgs) {
   return applyDecorators(
-    SetMetadata(ROLE_KEY, roles),
+    SetMetadata(ALLOWED_SCOPES_KEY, allowedScopes),
     ApiBearerAuth(),
     ApiUnauthorizedResponse({ description: 'Unauthorized' }),
   );
 }
 
-export const Public = () => Roles(Role.PUBLIC);
-export const AuthorizedOnly = () => Roles(Role.AUTHORIZED);
-export const ManagerOrSeniorOnly = () => Roles(Role.MANAGER_OR_SENIOR);
-export const AdminOnly = () => Roles(Role.ADMIN);
-export const SuperAdminOnly = () => Roles(Role.SUPER_ADMIN);
-export const DevelopmentOnly = () => Roles(Role.DEVELOPMENT_ONLY);
+export const Public = () => AllowedFor(AccessEnum.PUBLIC);
+export const AuthorizedOnly = () => AllowedFor(AccessEnum.AUTHORIZED);
+export const DevelopmentOnly = () => AllowedFor(AccessEnum.DEVELOPMENT_ONLY);

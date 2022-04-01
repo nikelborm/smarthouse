@@ -19,13 +19,7 @@ import {
   CreateManyUsersResponseDTO,
   SetMyPasswordDTO,
 } from 'src/types';
-import {
-  AuthedRequest,
-  AuthorizedOnly,
-  Role,
-  Roles,
-  SuperAdminOnly,
-} from '../auth';
+import { AccessEnum, AllowedFor, AuthedRequest, AuthorizedOnly } from '../auth';
 
 @ApiTags('user')
 @Controller('/api')
@@ -33,11 +27,11 @@ export class UserController {
   constructor(private readonly userUseCase: UserUseCase) {}
 
   @Get('/users')
-  @Roles(Role.ADMIN, Role.SUPER_ADMIN)
+  @AllowedFor(AccessEnum.USER_VIEW)
   async findManyUsers(
     @Query('search') search?: string,
   ): Promise<FindManyUsersResponseDTO> {
-    const users = await this.userUseCase.findManyWithAdditionalRole(search);
+    const users = await this.userUseCase.findMany(search);
     return {
       response: {
         users,
@@ -46,6 +40,7 @@ export class UserController {
   }
 
   @Post('/createUser')
+  @AllowedFor(AccessEnum.USER_CREATE)
   async createUser(
     @Body(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true }))
     { firstName, lastName, email, password }: CreateUserDTO,
@@ -65,7 +60,7 @@ export class UserController {
   }
 
   @Post('/createUsers')
-  @SuperAdminOnly()
+  @AllowedFor(AccessEnum.USER_CREATE)
   async createUsers(
     @Body(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true }))
     { users }: CreateUsersDTO,
@@ -90,7 +85,7 @@ export class UserController {
   }
 
   @Post('/deleteUserById')
-  @SuperAdminOnly()
+  @AllowedFor(AccessEnum.USER_DELETE)
   async deleteUser(
     @Body(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true }))
     { id }: DeleteEntityByIdDTO,

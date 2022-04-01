@@ -53,7 +53,9 @@ export class AuthService {
         firstName: user.firstName,
         lastName: user.lastName,
         // @ts-expect-error я специально спрятал эту штуку, чтобы не было соблазна положиться на неё в коде. Она чисто для фронта, для показа пунктов меню
-        addionalRoles: [...new Set(user.accessScopes.map(({ type }) => type))],
+        accessScopeTypes: [
+          ...new Set(user.accessScopes.map(({ type }) => type)),
+        ],
       },
     };
     return payload;
@@ -67,6 +69,9 @@ export class AuthService {
   }
 
   async verify(authHeader: string) {
+    if (!authHeader)
+      throw new UnauthorizedException(messages.auth.missingAuthHeader);
+
     const [type, token] = authHeader.split(' ');
     if (type !== 'Bearer')
       throw new UnauthorizedException(messages.auth.incorrectTokenType);

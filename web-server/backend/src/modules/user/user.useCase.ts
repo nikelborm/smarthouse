@@ -2,7 +2,6 @@ import { BadRequestException, Injectable } from '@nestjs/common';
 import { model, repo } from '../infrastructure';
 import { createHash, randomBytes } from 'crypto';
 import { ConfigService } from '@nestjs/config';
-import { AccessScopeType, UserAdditionalRole } from 'src/types';
 import { messages } from 'src/config';
 
 @Injectable()
@@ -24,26 +23,8 @@ export class UserUseCase {
     return this.userRepo.delete(id);
   }
 
-  async findManyWithAdditionalRole(search?: string) {
-    const users = await this.userRepo.findManyWithAccessScopes(search);
-
-    return users.map(({ accessScopes, ...other }) => {
-      const addionalRoles = new Set(accessScopes.map(({ type }) => type));
-
-      const getAdditionalRole = () => {
-        if (addionalRoles.has(AccessScopeType.SUPER_ADMIN))
-          return UserAdditionalRole.SUPER_ADMIN;
-        if (addionalRoles.has(AccessScopeType.ADMIN))
-          return UserAdditionalRole.ADMIN;
-        return UserAdditionalRole.NONE;
-      };
-
-      return {
-        ...other,
-        addionalRole: getAdditionalRole(),
-        accessScopes,
-      };
-    });
+  async findMany(search?: string) {
+    return await this.userRepo.findManyWithAccessScopes(search);
   }
 
   createManyUsers(users: InputUser[]) {
