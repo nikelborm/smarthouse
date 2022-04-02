@@ -1,33 +1,25 @@
 import { MigrationInterface, QueryRunner } from 'typeorm';
 
-export class Init1648763655605 implements MigrationInterface {
-  name = 'Init1648763655605';
+export class Init1648906340477 implements MigrationInterface {
+  name = 'Init1648906340477';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(`
-      CREATE TABLE "client" (
-        "client_id" SERIAL NOT NULL,
-        "client_uuid" uuid NOT NULL,
-        "client_shortname" character varying NOT NULL,
-        "client_shortname_alias" character varying,
-        "client_fullname" character varying NOT NULL,
-        "client_fullname_alias" character varying,
-        "client_description" character varying NOT NULL,
-        "client_description_alias" character varying,
-        "client_was_last_active_at" TIMESTAMP WITH TIME ZONE NOT NULL,
-        "encryption_module_id" integer NOT NULL,
-        "client_encryption_credentials" jsonb NOT NULL,
-        CONSTRAINT "UQ_eda3a2175f92585f73102034683" UNIQUE ("client_uuid"),
-        CONSTRAINT "PK_7510ce0a84bde51dbff978b4b49" PRIMARY KEY ("client_id")
+      CREATE TABLE "data_validator" (
+        "data_validator_id" SERIAL NOT NULL,
+        "data_validator_uuid" uuid NOT NULL,
+        "data_validator_name" character varying NOT NULL,
+        CONSTRAINT "UQ_09e69c49c12702f1dfc4a03412b" UNIQUE ("data_validator_uuid"),
+        CONSTRAINT "PK_2d326af0edf8f1c1a2b7aa9a258" PRIMARY KEY ("data_validator_id")
       )
     `);
     await queryRunner.query(`
-      CREATE TABLE "encryption_module" (
-        "encryption_module_id" SERIAL NOT NULL,
-        "encryption_module_uuid" uuid NOT NULL,
-        "encryption_module_name" character varying NOT NULL,
-        CONSTRAINT "UQ_a0a142d05f576dd662b315fd057" UNIQUE ("encryption_module_uuid"),
-        CONSTRAINT "PK_237c984a066a796e029deeab391" PRIMARY KEY ("encryption_module_id")
+      CREATE TABLE "encryption_worker" (
+        "encryption_worker_id" SERIAL NOT NULL,
+        "encryption_worker_uuid" uuid NOT NULL,
+        "encryption_worker_name" character varying NOT NULL,
+        CONSTRAINT "UQ_c7453dcae1c2001eb83a6e7db18" UNIQUE ("encryption_worker_uuid"),
+        CONSTRAINT "PK_b1958c7d3fca19ec440e52d798a" PRIMARY KEY ("encryption_worker_id")
       )
     `);
     await queryRunner.query(`
@@ -42,7 +34,7 @@ export class Init1648763655605 implements MigrationInterface {
         "endpoint_shortcode" character varying(4) NOT NULL,
         "endpoint_description" character varying NOT NULL,
         "endpoint_description_alias" character varying,
-        "event_id" integer NOT NULL,
+        "event_id" integer,
         "client_id" integer NOT NULL,
         "endpoint_type" "public"."endpoint_endpoint_type_enum" NOT NULL,
         "endpoint_hex_color" character(6) NOT NULL,
@@ -105,17 +97,21 @@ export class Init1648763655605 implements MigrationInterface {
       CREATE UNIQUE INDEX "IDX_44b30a9863e98f0e33a9b289f3" ON "route" ("source_endpoint_id", "sink_endpoint_id")
     `);
     await queryRunner.query(`
-      CREATE TABLE "data_validator" (
-        "data_validator_id" SERIAL NOT NULL,
-        "data_validator_uuid" uuid NOT NULL,
-        "data_validator_name" character varying NOT NULL,
-        CONSTRAINT "UQ_09e69c49c12702f1dfc4a03412b" UNIQUE ("data_validator_uuid"),
-        CONSTRAINT "PK_2d326af0edf8f1c1a2b7aa9a258" PRIMARY KEY ("data_validator_id")
+      CREATE TABLE "client" (
+        "client_id" SERIAL NOT NULL,
+        "client_uuid" uuid NOT NULL,
+        "client_shortname" character varying NOT NULL,
+        "client_shortname_alias" character varying,
+        "client_fullname" character varying NOT NULL,
+        "client_fullname_alias" character varying,
+        "client_description" character varying NOT NULL,
+        "client_description_alias" character varying,
+        "client_was_last_active_at" TIMESTAMP WITH TIME ZONE NOT NULL,
+        "encryption_worker_id" integer NOT NULL,
+        "client_encryption_credentials" jsonb NOT NULL,
+        CONSTRAINT "UQ_eda3a2175f92585f73102034683" UNIQUE ("client_uuid"),
+        CONSTRAINT "PK_7510ce0a84bde51dbff978b4b49" PRIMARY KEY ("client_id")
       )
-    `);
-    await queryRunner.query(`
-      ALTER TABLE "client"
-      ADD CONSTRAINT "FK_c5a38f68232407f646c6a4f3a56" FOREIGN KEY ("encryption_module_id") REFERENCES "encryption_module"("encryption_module_id") ON DELETE NO ACTION ON UPDATE NO ACTION
     `);
     await queryRunner.query(`
       ALTER TABLE "endpoint"
@@ -145,9 +141,16 @@ export class Init1648763655605 implements MigrationInterface {
       ALTER TABLE "route"
       ADD CONSTRAINT "FK_8b945c4222359498a187243367b" FOREIGN KEY ("sink_endpoint_id") REFERENCES "endpoint"("endpoint_id") ON DELETE NO ACTION ON UPDATE NO ACTION
     `);
+    await queryRunner.query(`
+      ALTER TABLE "client"
+      ADD CONSTRAINT "FK_b8811c5d535155e45cb001d7086" FOREIGN KEY ("encryption_worker_id") REFERENCES "encryption_worker"("encryption_worker_id") ON DELETE NO ACTION ON UPDATE NO ACTION
+    `);
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
+    await queryRunner.query(`
+      ALTER TABLE "client" DROP CONSTRAINT "FK_b8811c5d535155e45cb001d7086"
+    `);
     await queryRunner.query(`
       ALTER TABLE "route" DROP CONSTRAINT "FK_8b945c4222359498a187243367b"
     `);
@@ -170,10 +173,7 @@ export class Init1648763655605 implements MigrationInterface {
       ALTER TABLE "endpoint" DROP CONSTRAINT "FK_d7eaf082061e16e933604d7bb97"
     `);
     await queryRunner.query(`
-      ALTER TABLE "client" DROP CONSTRAINT "FK_c5a38f68232407f646c6a4f3a56"
-    `);
-    await queryRunner.query(`
-      DROP TABLE "data_validator"
+      DROP TABLE "client"
     `);
     await queryRunner.query(`
       DROP INDEX "public"."IDX_44b30a9863e98f0e33a9b289f3"
@@ -203,10 +203,10 @@ export class Init1648763655605 implements MigrationInterface {
       DROP TYPE "public"."endpoint_endpoint_type_enum"
     `);
     await queryRunner.query(`
-      DROP TABLE "encryption_module"
+      DROP TABLE "encryption_worker"
     `);
     await queryRunner.query(`
-      DROP TABLE "client"
+      DROP TABLE "data_validator"
     `);
   }
 }

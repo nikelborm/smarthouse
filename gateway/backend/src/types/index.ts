@@ -1,5 +1,5 @@
 export * from './dto';
-export * from './encryptionModuleCredentials';
+export * from './encryptionWorkerCredentials';
 export * from './endpointType';
 export * from './errors';
 export * from './eventType';

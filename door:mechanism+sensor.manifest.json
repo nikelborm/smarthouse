@@ -6,9 +6,9 @@
 
     "UUID": "51eea88c-9c7c-49a5-b38c-a1526ac88e0f",
 
-    "encryptionModuleUUID": "ca4e23ec-f2a4-4d78-aa94-2065d72d5824",
+    "encryptionWorkerUUID": "ca4e23ec-f2a4-4d78-aa94-2065d72d5824",
 
-    "encryptionModuleCredentials": {
+    "encryptionWorkerCredentials": {
       "clientPublicKey": "public client key of esp8266",
       "clientUUIDSignedByClientPrivateKey": "blablablablablabalblalbabalbbalablablalbablaabllbaablabalbalablablablabalb"
     },

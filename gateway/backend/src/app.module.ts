@@ -1,10 +1,12 @@
 import { MiddlewareConsumer, Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { ServeStaticModule } from '@nestjs/serve-static';
+import { join, resolve } from 'path';
+
 import { appConfig, dbConfig } from './config';
 import { AccessLogMiddleware } from './tools';
+
 import { InfrastructureModule } from './modules/infrastructure';
-import { join, resolve } from 'path';
 import { ClientInitialHandshakeModule } from './modules/clientInitialHandshake';
 import { ClientManagementModule } from './modules/clientManagement';
 import { EventModule } from './modules/event';
