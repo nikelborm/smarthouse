@@ -12,6 +12,8 @@ import { EventParameterModule } from './modules/eventParameter';
 import { GatewayEndpointsModule } from './modules/gatewayEndpoints';
 import { MessagesModule } from './modules/messages';
 import { RouteModule } from './modules/route';
+import { DataValidatorModule } from './modules/dataValidator';
+import { EncryptionModule } from './modules/encryption';
 
 @Module({
   imports: [
@@ -23,12 +25,15 @@ import { RouteModule } from './modules/route';
     ServeStaticModule.forRoot({
       rootPath: join(resolve(), 'build'),
     }),
-    InfrastructureModule,
+
     ClientInitialHandshakeModule,
     ClientManagementModule,
+    DataValidatorModule,
+    EncryptionModule,
     EventModule,
     EventParameterModule,
     GatewayEndpointsModule,
+    InfrastructureModule,
     MessagesModule,
     RouteModule,
   ],
