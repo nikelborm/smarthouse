@@ -41,6 +41,7 @@
     "@nestjs/typeorm": "8.0.3",
     "@nestjs/websockets": "^8.4.3",
     "@nestjsi/typeorm-pg": "0.2.3",
+    "@types/ws": "^8.5.3",
     "bcrypt": "^5.0.1",
     "class-transformer": "0.5.1",
     "class-validator": "^0.13.2",
@@ -65,7 +66,8 @@
     "tsconfig-paths": "^3.12.0",
     "typeorm": "0.3.4",
     "typescript": "^4.5.2",
-    "uuid": "^8.3.2"
+    "uuid": "^8.3.2",
+    "ws": "^8.5.0"
   },
   "devDependencies": {
     "@dbml/cli": "^2.3.1",

@@ -1,7 +1,5 @@
 import { MiddlewareConsumer, Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
-import { ServeStaticModule } from '@nestjs/serve-static';
-import { join, resolve } from 'path';
 
 import { appConfig, dbConfig } from './config';
 import { AccessLogMiddleware } from './tools';
@@ -23,9 +21,6 @@ import { EncryptionModule } from './modules/encryption';
       cache: true,
       isGlobal: true,
       load: [appConfig, dbConfig],
-    }),
-    ServeStaticModule.forRoot({
-      rootPath: join(resolve(), 'build'),
     }),
 
     ClientInitialHandshakeModule,
