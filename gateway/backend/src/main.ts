@@ -6,12 +6,14 @@ import { json, urlencoded } from 'express';
 // import * as expressSession from 'express-session';
 // import * as connectPgSimple from 'connect-pg-simple';
 import { ConfigService } from '@nestjs/config';
+import { WsAdapter } from '@nestjs/platform-ws';
 import { logConfig } from './tools';
 
 // const PgSession = connectPgSimple(expressSession);
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+  app.useWebSocketAdapter(new WsAdapter(app));
   const configService = app.get(ConfigService);
   // const pgPool = new pg.Pool({
   //   host: configService.get('database.host'),
