@@ -54,11 +54,12 @@ export class Endpoint {
   })
   descriptionAlias!: string;
 
-  @ManyToOne(() => Event, (event) => event.endpoints, { nullable: false })
+  // nullable: true может произойти например если это универсальный вход
+  @ManyToOne(() => Event, (event) => event.endpoints, { nullable: true })
   @JoinColumn({ name: 'event_id' })
   event!: Event;
 
-  @Column({ nullable: false, name: 'event_id' })
+  @Column({ nullable: true, name: 'event_id' })
   eventId: number;
 
   @ManyToOne(() => Client, (client) => client.endpoints, { nullable: false })
