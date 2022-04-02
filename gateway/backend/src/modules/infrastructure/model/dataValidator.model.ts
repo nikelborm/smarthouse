@@ -31,6 +31,7 @@ export class DataValidator {
 
 // float: aae1f077-aeeb-4e84-8e9e-5c0e402e8af9
 // integer: 00db2932-12b8-415f-b5f2-9f6f6f8d8d06
+// boolean: 930877ce-d692-4ae1-a1db-580ae6546c36
 // string: 7f28e4a4-eec8-408f-bf61-a4d7cf734a45
 // date: 17a8cf06-0490-4326-941b-660d56de4e73
 // json: e9693774-a2d1-450a-b293-e77298e47bad
