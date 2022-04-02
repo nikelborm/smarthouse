@@ -1,6 +1,6 @@
 export * from './client.repo';
 export * from './dataValidator.repo';
-export * from './encryptionModule.repo';
+export * from './encryptionWorker.repo';
 export * from './endpoint.repo';
 export * from './event.repo';
 export * from './eventParameter.repo';

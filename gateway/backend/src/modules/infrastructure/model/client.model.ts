@@ -6,8 +6,8 @@ import {
   ManyToOne,
   JoinColumn,
 } from 'typeorm';
-import { EncryptionModuleCredentials } from 'src/types';
-import { Endpoint, EncryptionModule } from '.';
+import { EncryptionWorkerCredentialsStoredInDB } from 'src/types';
+import { Endpoint, EncryptionWorker } from '.';
 
 @Entity({ name: 'client' })
 export class Client {
@@ -66,25 +66,25 @@ export class Client {
   wasLastActiveAt!: Date;
 
   @ManyToOne(
-    () => EncryptionModule,
-    (encryptionModule) => encryptionModule.clients,
+    () => EncryptionWorker,
+    (encryptionWorker) => encryptionWorker.clients,
     { nullable: false },
   )
-  @JoinColumn({ name: 'encryption_module_id' })
-  encryptionModule!: EncryptionModule;
+  @JoinColumn({ name: 'encryption_worker_id' })
+  encryptionWorker!: EncryptionWorker;
 
   @Column({
-    name: 'encryption_module_id',
+    name: 'encryption_worker_id',
     nullable: false,
   })
-  encryptionModuleId!: number;
+  encryptionWorkerId!: number;
 
   @Column({
     name: 'client_encryption_credentials',
     nullable: false,
     type: 'jsonb',
   })
-  encryptionModuleCredentials!: EncryptionModuleCredentials;
+  encryptionWorkerCredentials!: EncryptionWorkerCredentialsStoredInDB;
 
   @OneToMany(() => Endpoint, (endpoint) => endpoint.client)
   endpoints!: Endpoint[];
