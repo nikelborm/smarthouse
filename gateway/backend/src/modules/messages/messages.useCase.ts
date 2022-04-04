@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
-import { repo } from '../infrastructure';
+import { WebsocketService } from './websocket.service';
 
 @Injectable()
 export class MessagesUseCase {
-  constructor(private readonly routeRepo: repo.RouteRepo) {}
+  constructor(private readonly WSService: WebsocketService) {}
 }
