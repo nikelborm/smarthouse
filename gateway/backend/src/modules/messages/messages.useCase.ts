@@ -3,5 +3,14 @@ import { WebsocketService } from './websocket.service';
 
 @Injectable()
 export class MessagesUseCase {
-  constructor(private readonly WSService: WebsocketService) {}
+  private readonly websocketService: WebsocketService;
+
+  constructor() {
+    // this.websocketService = new WebsocketService({
+    //   port: 4999,
+    //   authRequestCB: () => {},
+    //   authedMessageCB: () => {},
+    //   authedClientOfflineCB: () => {},
+    // });
+  }
 }
