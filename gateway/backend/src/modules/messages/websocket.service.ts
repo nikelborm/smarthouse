@@ -1,9 +1,6 @@
-import { Injectable } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
 import { RawData, Server, WebSocket } from 'ws';
 import { model } from '../infrastructure';
 
-@Injectable()
 export class WebsocketService {
   private readonly server: Server<WebSocketCustomClient>;
   private deadSocketsCleanerInterval: NodeJS.Timer;
@@ -40,7 +37,7 @@ export class WebsocketService {
       .map((connection) => connection.session.uuid);
   }
 
-  async sendToClientByUUID(UUID: string, document: Record<string, any>) {
+  async sendToClientBy(UUID: string, document: Record<string, any>) {
     let wasClientFound = false;
     for (const connection of this.server.clients) {
       if (connection.session.uuid === UUID) {
@@ -51,11 +48,30 @@ export class WebsocketService {
     if (!wasClientFound) throw new Error('Client does not connected to server');
   }
 
-  sendToClientsByIds(UUIDs: string[], document: Record<string, any>) {
+  sendToManyClientsBy(
+    predicate: (session: model.Client) => boolean,
+    document: Record<string, any>,
+  ): void;
+  sendToManyClientsBy(UUIDs: string[], document: Record<string, any>): void;
+  sendToManyClientsBy(
+    UUIDsOrPredicate: string[] | ((session: model.Client) => boolean),
+    document: Record<string, any>,
+  ) {
     const json = JSON.stringify(document);
-    const uuids = new Set(UUIDs);
+
+    let predicate: (socket: WebSocketCustomClient) => boolean;
+
+    if (typeof UUIDsOrPredicate == 'function') {
+      predicate = ({ isAuthorized, session }) =>
+        isAuthorized && UUIDsOrPredicate(session);
+    } else {
+      const uuids = new Set(UUIDsOrPredicate);
+      predicate = (socket) =>
+        socket.isAuthorized && uuids.has(socket.session.uuid);
+    }
+
     for (const connection of this.server.clients) {
-      if (uuids.has(connection.session.uuid)) {
+      if (predicate(connection)) {
         connection.send(json);
       }
     }
@@ -130,18 +146,18 @@ interface WebSocketCustomClient extends WebSocket {
   isAlive: boolean;
 }
 
-type AuthRequestCB = (
+export type AuthRequestCB = (
   message: Message,
 ) => Promise<AuthRequestResult> | AuthRequestResult;
 
-type AuthRequestResult =
+export type AuthRequestResult =
   | { isAuthorized: false }
   | {
       isAuthorized: true;
       session: model.Client;
     };
 
-type AuthedMessageCB = (
+export type AuthedMessageCB = (
   message: Message,
   session: model.Client,
 ) => Promise<any> | any;
