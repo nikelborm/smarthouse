@@ -50,14 +50,16 @@ export class WebsocketService {
 
   sendToManyClientsBy(
     predicate: (client: model.Client) => boolean,
-    document: Record<string, any>,
+    getEncryptedMessage: (client: model.Client) => string,
   ): void;
-  sendToManyClientsBy(UUIDs: string[], document: Record<string, any>): void;
+  sendToManyClientsBy(
+    UUIDs: string[],
+    getEncryptedMessage: (client: model.Client) => string,
+  ): void;
   sendToManyClientsBy(
     UUIDsOrPredicate: string[] | ((client: model.Client) => boolean),
-    document: Record<string, any>,
+    getEncryptedMessage: (client: model.Client) => string,
   ) {
-    const json = JSON.stringify(document);
 
     let predicate: (socket: WebSocketCustomClient) => boolean;
 
@@ -72,7 +74,7 @@ export class WebsocketService {
 
     for (const connection of this.server.clients) {
       if (predicate(connection)) {
-        connection.send(json);
+        connection.send(getEncryptedMessage(connection.client));
       }
     }
   }

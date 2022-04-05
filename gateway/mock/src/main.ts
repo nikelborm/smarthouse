@@ -15,7 +15,7 @@ async function bootstrap() {
     const mockUseCase = app.get(MockDataUseCase);
     const scriptName = configService.get('mockDataFillerScriptMethodName');
     if (!scriptName || !(scriptName in mockUseCase))
-      throw new Error(`Script with name '${scriptName}' not found`);
+      throw new Error(`Script with name '${scriptName}' was not found`);
     console.log(`\n\n\nfilling started: ${scriptName}\n`);
     await mockUseCase[scriptName]();
     console.log('DATABASE FILLED SUCCESSFULLY\n\n\n');

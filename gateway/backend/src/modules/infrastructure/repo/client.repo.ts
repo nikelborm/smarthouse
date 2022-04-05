@@ -36,6 +36,10 @@ export class ClientRepo {
   }
 
   async getOneWithInfoAboutSupportedStuffBy(uuid: string) {
+    console.log(
+      '🚀 ~ file: client.repo.ts ~ line 87 ~ ClientRepo ~ getOneWithInfoAboutSupportedStuffBy ~ client',
+      uuid,
+    );
     const client = await this.repo.findOne({
       where: { uuid },
       select: {
@@ -65,9 +69,7 @@ export class ClientRepo {
         },
       },
       relations: {
-        encryptionWorker: {
-          uuid: true,
-        },
+        encryptionWorker: true,
         endpoints: {
           event: {
             parameterAssociations: {
