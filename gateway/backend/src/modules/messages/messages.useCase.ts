@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { differenceBetweenSetsInArray } from 'src/tools';
 import {
   AuthMessage,
   DecryptedRegularMessage,
@@ -6,6 +7,7 @@ import {
   EventType,
   validate,
 } from 'src/types';
+import { DataValidatorUseCase } from '../dataValidator';
 import { EncryptionUseCase } from '../encryption';
 import { repo } from '../infrastructure';
 import {
@@ -19,7 +21,7 @@ import {
 export class MessagesUseCase {
   constructor(
     private readonly clientRepo: repo.ClientRepo,
-    private readonly routeRepo: repo.RouteRepo,
+    private readonly dataValidatorUseCase: DataValidatorUseCase,
     private readonly encryptionUseCase: EncryptionUseCase,
   ) {
     new WebsocketService({
@@ -80,7 +82,7 @@ export class MessagesUseCase {
 
       if (!endpoint)
         throw new Error(
-          `Client does not have permission to use endpoint ${parsedMessage.endpointUUID}`,
+          `Client does not have endpoint ${parsedMessage.endpointUUID} and cannot use it`,
         );
 
       const canClientSendMessageWithEndpoint =
@@ -96,6 +98,72 @@ export class MessagesUseCase {
       const {
         event: { parameterAssociations },
       } = endpoint;
+
+      const requiredEventParametersUUIDs = parameterAssociations
+        .filter(({ isParameterRequired }) => isParameterRequired)
+        .map(({ eventParameter: { uuid } }) => uuid);
+
+      const allEventParametersUUIDs = parameterAssociations.map(
+        ({ eventParameter: { uuid } }) => uuid,
+      );
+
+      const allMessageParametersUUIDs = parsedMessage.parameters.map(
+        ({ uuid }) => uuid,
+      );
+
+      if (parsedMessage?.parameters?.length) {
+        const messageParametersUUIDsWithoutDuplicates = new Set(
+          allMessageParametersUUIDs,
+        );
+
+        if (
+          messageParametersUUIDsWithoutDuplicates.size <
+          allMessageParametersUUIDs.length
+        )
+          throw new Error(`Message contains duplicate parameters`);
+
+        const redundantParametersUUIDs = differenceBetweenSetsInArray(
+          messageParametersUUIDsWithoutDuplicates,
+          new Set(allEventParametersUUIDs),
+        );
+
+        if (redundantParametersUUIDs.length > 0)
+          throw new Error(
+            `Found message parameters that should NOT be sent ${redundantParametersUUIDs}`,
+          );
+
+        const notSentParametersUUIDs = differenceBetweenSetsInArray(
+          new Set(requiredEventParametersUUIDs),
+          messageParametersUUIDsWithoutDuplicates,
+        );
+
+        if (notSentParametersUUIDs.length > 0)
+          throw new Error(
+            `Found message parameters that should be sent ${notSentParametersUUIDs}`,
+          );
+
+        const paramToValidator = Object.fromEntries(
+          parameterAssociations.map(
+            ({
+              eventParameter: {
+                uuid: parameterUUID,
+                dataValidator: { uuid: validatorUUID },
+              },
+            }) => [parameterUUID, validatorUUID],
+          ),
+        );
+
+        for (const messageParam of parsedMessage.parameters) {
+          const doesValueMatchItsType = this.dataValidatorUseCase
+            .getValidator(paramToValidator[messageParam.uuid])
+            .verify(messageParam.value);
+
+          if (!doesValueMatchItsType) throw new Error('Incorrect value format');
+        }
+      } else {
+        if (requiredEventParametersUUIDs.length)
+          throw new Error('Some required parameters are not specified');
+      }
     } catch (error) {
       console.log(`authRequestCB ~ ${client.uuid} ~ error`, error);
     }
