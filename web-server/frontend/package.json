@@ -162,7 +162,7 @@
   "devDependencies": {
     "@types/react-datepicker": "^4.1.7",
     "@types/react-router-dom": "^5.3.2",
-    "@types/validator": "^13.7.0",
+    "@types/validator": "^13.7.2",
     "react-hooks": "^1.0.1"
   }
 }

@@ -1,3 +1,4 @@
+import { isObject } from 'class-validator';
 import { IEncryptionWorker } from '../IEncryptionWorker';
 
 export class WithoutEncryptionService
@@ -13,6 +14,10 @@ export class WithoutEncryptionService
   async getServerSideHandshakeCredentials(
     clientSideHandshakeCredentials: Record<string, never>,
   ) {
+    console.log(
+      'clientSideHandshakeCredentials: ',
+      clientSideHandshakeCredentials,
+    );
     return {
       credentialsToSendBackToClient: {},
       credentialsToStoreInDatabase: {},
@@ -22,27 +27,34 @@ export class WithoutEncryptionService
   async validateClientSideHandshakeCredentials(
     clientSideHandshakeCredentials: Record<string, never>,
   ) {
-    return true;
+    console.log(
+      'clientSideHandshakeCredentials: ',
+      clientSideHandshakeCredentials,
+    );
+    return isObject(clientSideHandshakeCredentials);
   }
 
   async encryptJsonStringToSendToClient(
     credentialsFromDatabase: Record<string, never>,
     message: string,
   ) {
-    return JSON.stringify(message);
+    console.log('credentialsFromDatabase: ', credentialsFromDatabase);
+    return `((((((${message}))))))`;
   }
 
   async decryptEncryptedJsonStringSentFromClient(
     credentialsFromDatabase: Record<string, never>,
     encryptedMessage: string,
   ) {
-    return JSON.parse(encryptedMessage);
+    console.log('credentialsFromDatabase: ', credentialsFromDatabase);
+    // messages from client should be [[[{"asd":123}]]]
+    return encryptedMessage.slice(3, -3);
   }
 
   async validateAuthRequestFromClient(
     credentialsFromDatabase: Record<string, never>,
     authRequestMessage: Record<string, any>,
   ) {
-    return true;
+    if (authRequestMessage.password === 'test') return true;
   }
 }

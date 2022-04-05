@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { USBSerialDeviceWatcherService } from './USBSerialDeviceWatcher.service';
 import { SerialPort, ReadlineParser } from 'serialport';
 import { ClientInitialHandshakeUseCase } from './clientInitialHandshake.useCase';
+import { InitHandshakeQuery } from 'src/types';
 
 @Injectable()
 export class ClientInitialHardwareHandshakeService {
@@ -29,16 +30,16 @@ export class ClientInitialHardwareHandshakeService {
     });
 
     readlineParser.addListener('data', async (line) => {
-      const handshakeRequest = JSON.parse(line);
+      // TODO: Добавить try catch
+      const handshakeRequest: InitHandshakeQuery = JSON.parse(line);
       const handshakeResponse = await this.clientInitialHandshakeUseCase.init(
         handshakeRequest,
       );
       const handshakeResponseJSON = JSON.stringify(handshakeResponse);
 
+      // TODO: добавить валидацию выходного сообщения
       serialPort.write(handshakeResponseJSON);
       serialPort.drain(() => serialPort.close());
-
-      handshakeRequest.JSON.stringify(line);
 
       console.log('readlineParser data Listener: ', line);
     });

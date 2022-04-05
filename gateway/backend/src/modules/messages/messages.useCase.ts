@@ -84,14 +84,47 @@ export class MessagesUseCase {
 
       this.productValidations(endpoint, parsedMessage);
 
-      const dataConsumerEndpoints = this.routeRepo.getManyRoutesBySource(
+      const dataConsumerEndpoints = await this.routeRepo.getManyRoutesBySource(
         endpoint.id,
       );
 
-      // consu
-      // this.wsservice.sendToManyClientsBy(({}) => () ,() => {
-      //   encryptJsonStringToSendToClient
-      // }, parsedMessage);
+      const dataConsumerClientIds = new Set(
+        dataConsumerEndpoints.map(({ sinkEndpoint: { clientId } }) => clientId),
+      );
+
+      const dataConsumerEndpointUUIDs = new Set(
+        dataConsumerEndpoints.map(({ sinkEndpoint: { uuid } }) => uuid),
+      );
+
+      this.wsservice.sendToManyClientsBy(
+        ({ id }) => dataConsumerClientIds.has(id),
+        async (client) => {
+          const encryptedMessages: string[] = [];
+          for (const { uuid: endpointUUID } of client.endpoints) {
+            if (!dataConsumerEndpointUUIDs.has(endpointUUID)) continue;
+
+            const message: DecryptedRegularMessage = {
+              endpointUUID,
+              messageUUID: parsedMessage.messageUUID,
+              parameters: parsedMessage.parameters,
+            };
+
+            // TODO: сюда кажется надо добавить как раз ту хуйню с сериализацией параметров
+            // а может и не надо потому что мы по факту отправляем то что приняли и оно уже
+            // по сути сериализовано, если пихнули в сообщение
+            const encryptedMessage = await this.encryptionUseCase
+              .getEncryptionWorker(client.encryptionWorker.uuid)
+              .encryptJsonStringToSendToClient(
+                client.encryptionWorkerCredentials,
+                JSON.stringify(message),
+              );
+
+            encryptedMessages.push(encryptedMessage);
+          }
+          return encryptedMessages;
+        },
+      );
+
       console.log(
         '🚀 ~ file: messages.useCase.ts ~ line 90 ~ MessagesUseCase ~ authedMessageCB:AuthedMessageCB= ~ dataConsumerEndpoints',
         dataConsumerEndpoints,

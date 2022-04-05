@@ -36,10 +36,11 @@ export class RouteRepo {
   }
 
   async getManyRoutesBySource(endpointId: number) {
-    const routes = await this.repo.findOne({
+    const routes = await this.repo.find({
       where: { sourceEndpointId: endpointId },
       select: {
         sinkEndpoint: {
+          uuid: true,
           clientId: true,
         },
       },

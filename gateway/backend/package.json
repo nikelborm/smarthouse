@@ -41,6 +41,7 @@
     "@nestjs/typeorm": "8.0.3",
     "@nestjs/websockets": "^8.4.3",
     "@nestjsi/typeorm-pg": "0.2.3",
+    "@types/validator": "^13.7.2",
     "@types/ws": "^8.5.3",
     "bcrypt": "^5.0.1",
     "class-transformer": "0.5.1",

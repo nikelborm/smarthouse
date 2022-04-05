@@ -50,17 +50,22 @@ export class WebsocketService {
 
   sendToManyClientsBy(
     predicate: (client: model.Client) => boolean,
-    getEncryptedMessage: (client: model.Client) => string,
+    getEncryptedMessagesForMatchedClient: (
+      client: model.Client,
+    ) => Promise<string[]>,
   ): void;
   sendToManyClientsBy(
     UUIDs: string[],
-    getEncryptedMessage: (client: model.Client) => string,
+    getEncryptedMessagesForMatchedClient: (
+      client: model.Client,
+    ) => Promise<string[]>,
   ): void;
-  sendToManyClientsBy(
+  async sendToManyClientsBy(
     UUIDsOrPredicate: string[] | ((client: model.Client) => boolean),
-    getEncryptedMessage: (client: model.Client) => string,
+    getEncryptedMessagesForMatchedClient: (
+      client: model.Client,
+    ) => Promise<string[]>,
   ) {
-
     let predicate: (socket: WebSocketCustomClient) => boolean;
 
     if (typeof UUIDsOrPredicate == 'function') {
@@ -74,7 +79,11 @@ export class WebsocketService {
 
     for (const connection of this.server.clients) {
       if (predicate(connection)) {
-        connection.send(getEncryptedMessage(connection.client));
+        const encryptedMessages = await getEncryptedMessagesForMatchedClient(
+          connection.client,
+        );
+
+        encryptedMessages.forEach((message) => connection.send(message));
       }
     }
   }
