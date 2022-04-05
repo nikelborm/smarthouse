@@ -10,7 +10,7 @@ import { EndpointType } from '../endpointType';
 
 export class RequestedEndpoint {
   @IsUUID('4')
-  UUID: string;
+  uuid: string;
 
   @IsString()
   @MinLength(2)

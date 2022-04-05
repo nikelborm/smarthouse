@@ -7,11 +7,16 @@ export class EncryptionUseCase {
   constructor() {
     for (const Worker of Object.values(workers)) {
       const workerInstance = Object.freeze(new Worker());
+      if (!workerInstance.uuid) {
+        throw new Error('Found encryption worker without uuid');
+      }
       this.store[workerInstance.uuid] = workerInstance;
     }
   }
 
   getEncryptionWorker(uuid: string) {
+    if (!this.store[uuid])
+      throw new Error(`There are no encryption worker with uuid={${uuid}}`);
     return this.store[uuid];
   }
 

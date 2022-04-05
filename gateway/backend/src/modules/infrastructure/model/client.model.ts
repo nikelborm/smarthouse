@@ -70,14 +70,15 @@ export class Client {
     (encryptionWorker) => encryptionWorker.clients,
     { nullable: false },
   )
-  @JoinColumn({ name: 'encryption_worker_id' })
+  @JoinColumn({ name: 'encryption_worker_uuid' })
   encryptionWorker!: EncryptionWorker;
 
   @Column({
-    name: 'encryption_worker_id',
+    name: 'encryption_worker_uuid',
     nullable: false,
+    type: 'uuid',
   })
-  encryptionWorkerId!: number;
+  encryptionWorkerUUID!: string;
 
   @Column({
     name: 'client_encryption_credentials',

@@ -1,16 +1,13 @@
-import { Entity, Column, PrimaryGeneratedColumn, OneToMany } from 'typeorm';
+import { Entity, Column, OneToMany } from 'typeorm';
 import { EventParameter } from '.';
 
 @Entity({ name: 'data_validator' })
 export class DataValidator {
-  @PrimaryGeneratedColumn({ name: 'data_validator_id' })
-  id!: number;
-
   @Column({
     name: 'data_validator_uuid',
     type: 'uuid',
     nullable: false,
-    unique: true,
+    primary: true,
   })
   uuid!: string;
 

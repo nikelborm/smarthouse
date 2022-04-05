@@ -24,7 +24,7 @@ export class WithoutEncryptionService
     };
   }
 
-  async validateClientSideHandshakeCredentials(
+  async isClientSideHandshakeCredentialsValid(
     clientSideHandshakeCredentials: Record<string, never>,
   ) {
     console.log(
@@ -51,7 +51,7 @@ export class WithoutEncryptionService
     return encryptedMessage.slice(3, -3);
   }
 
-  async validateAuthRequestFromClient(
+  async isAuthRequestFromClientValid(
     credentialsFromDatabase: Record<string, never>,
     authRequestMessage: Record<string, any>,
   ) {

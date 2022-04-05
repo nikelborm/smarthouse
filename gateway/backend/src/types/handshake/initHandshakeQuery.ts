@@ -26,7 +26,7 @@ export class InitHandshakeQuery {
   description: string;
 
   @IsUUID('4')
-  UUID: string;
+  uuid: string;
 
   @IsUUID('4')
   encryptionWorkerUUID: string;

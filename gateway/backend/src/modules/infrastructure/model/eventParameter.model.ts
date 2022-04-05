@@ -38,14 +38,15 @@ export class EventParameter {
     (dataValidator) => dataValidator.eventParameters,
     { nullable: false },
   )
-  @JoinColumn({ name: 'data_validator_id' })
+  @JoinColumn({ name: 'data_validator_uuid' })
   dataValidator!: DataValidator;
 
   @Column({
     nullable: false,
-    name: 'data_validator_id',
+    type: 'uuid',
+    name: 'data_validator_uuid',
   })
-  dataValidatorId!: number;
+  dataValidatorUUID!: string;
 
   @OneToMany(
     () => ParameterToEventAssociation,

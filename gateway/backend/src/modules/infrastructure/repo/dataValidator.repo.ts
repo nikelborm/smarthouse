@@ -11,7 +11,7 @@ import {
   updateOneWithRelations,
 } from 'src/tools';
 import { Repository } from 'typeorm';
-import { DataValidator } from '../model';
+import { DataValidator, EventParameter } from '../model';
 
 @Injectable()
 export class DataValidatorRepo {
@@ -24,38 +24,40 @@ export class DataValidatorRepo {
     return this.repo.find();
   }
 
-  async getOneById(id: number) {
+  async getOneByUUID(uuid: string) {
     const dataValidator = await this.repo.findOne({
-      where: { id },
+      where: { uuid },
     });
     if (!dataValidator)
       throw new BadRequestException(
-        messages.repo.common.cantGetNotFoundById('dataValidator', id),
+        messages.repo.common.cantGetNotFoundByUUID('dataValidator', uuid),
       );
     return dataValidator;
   }
 
-  createOneWithRelations(newDataValidator: NewEntity<DataValidator>) {
-    return createOneWithRelations(this.repo, newDataValidator, 'dataValidator');
+  createOneWithRelations(newDataValidator: NewDataValidator) {
+    return createOneWithRelations<any>(
+      this.repo,
+      newDataValidator,
+      'dataValidator',
+    );
   }
 
-  createManyWithRelations(newDataValidators: NewEntity<DataValidator>[]) {
-    return createManyWithRelations(
+  createManyWithRelations(newDataValidators: NewDataValidator[]) {
+    return createManyWithRelations<any>(
       this.repo,
       newDataValidators,
       'dataValidator',
     );
   }
 
-  updateOnePlain(id: number, updated: PlainEntityWithoutId<DataValidator>) {
-    return updateOnePlain(this.repo, id, updated, 'dataValidator');
-  }
-
-  updateOneWithRelations(newDataValidator: UpdatedEntity<DataValidator>) {
-    return updateOneWithRelations(this.repo, newDataValidator, 'dataValidator');
-  }
-
   async delete(id: number) {
     await this.repo.delete(id);
   }
 }
+
+type NewDataValidator = {
+  uuid: string;
+  name: string;
+  eventParameters?: EventParameter[];
+};

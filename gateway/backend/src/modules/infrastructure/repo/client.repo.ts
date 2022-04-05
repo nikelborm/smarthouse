@@ -10,7 +10,7 @@ import {
   updateOnePlain,
   updateOneWithRelations,
 } from 'src/tools';
-import { Repository } from 'typeorm';
+import { EntityManager, Repository } from 'typeorm';
 import { Client } from '../model';
 
 @Injectable()
@@ -89,8 +89,25 @@ export class ClientRepo {
     return client;
   }
 
-  createOneWithRelations(newClient: NewEntity<Client>) {
-    return createOneWithRelations(this.repo, newClient, 'client');
+  async createOneInTransactionWithRelations(
+    newClient: NewEntity<Client>,
+    transactionManager: EntityManager,
+  ) {
+    return this._createOneWithRelations(
+      newClient,
+      transactionManager.getRepository(Client),
+    );
+  }
+
+  private async _createOneWithRelations(
+    newClient: NewEntity<Client>,
+    overrideRepo?: Repository<Client>,
+  ) {
+    return createOneWithRelations(
+      overrideRepo || this.repo,
+      newClient,
+      'client',
+    );
   }
 
   createManyWithRelations(newClients: NewEntity<Client>[]) {

@@ -39,8 +39,15 @@ export class EventRepo {
     return createOneWithRelations(this.repo, newEvent, 'event');
   }
 
-  createManyWithRelations(newEvents: NewEntity<Event>[]) {
-    return createManyWithRelations(this.repo, newEvents, 'event');
+  createManyWithRelations(
+    newEvents: NewEntity<Event>[],
+    overrideRepo?: Repository<Event>,
+  ) {
+    return createManyWithRelations(
+      overrideRepo || this.repo,
+      newEvents,
+      'event',
+    );
   }
 
   updateOnePlain(id: number, updated: PlainEntityWithoutId<Event>) {

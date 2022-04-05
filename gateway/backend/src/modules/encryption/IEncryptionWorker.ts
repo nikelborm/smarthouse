@@ -10,7 +10,7 @@ export interface IEncryptionWorker<
   // Клиент присылает нам хендшейк по проводу, с указанием что будет
   // использовать конкретный воркер для шифрования
   // Соответсвенно шлюз должен проверить, что с ним всё в порядке
-  validateClientSideHandshakeCredentials(
+  isClientSideHandshakeCredentialsValid(
     clientSideHandshakeCredentials: HandshakeCredentialsSentByClient,
   ): Promise<boolean>;
 
@@ -26,7 +26,7 @@ export interface IEncryptionWorker<
 
   // когда клиент подключается в будущем, он при подключении сообщает кто он
   // и как-то доказывает, что он это он. тут мы в этом убеждаемся
-  validateAuthRequestFromClient(
+  isAuthRequestFromClientValid(
     credentialsFromDatabase: CredentialsStoredInDB,
     authRequestMessage: AuthMessage,
   ): Promise<boolean>;

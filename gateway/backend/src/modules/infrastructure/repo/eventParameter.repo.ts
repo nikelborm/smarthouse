@@ -10,7 +10,7 @@ import {
   updateOnePlain,
   updateOneWithRelations,
 } from 'src/tools';
-import { Repository } from 'typeorm';
+import { EntityManager, Repository } from 'typeorm';
 import { EventParameter } from '../model';
 
 @Injectable()
@@ -33,6 +33,41 @@ export class EventParameterRepo {
         messages.repo.common.cantGetNotFoundById('eventParameter', id),
       );
     return eventParameter;
+  }
+
+  insertInTransactionOnlyNewEventParameters(
+    newEventParameters: NewEntity<EventParameter>[],
+    transactionManager: EntityManager,
+  ) {
+    return this._insertOnlyNewEventParameters(
+      newEventParameters,
+      transactionManager.getRepository(EventParameter),
+    );
+  }
+
+  private async _insertOnlyNewEventParameters(
+    newEventParameters: NewEntity<EventParameter>[],
+    overrideRepo?: Repository<EventParameter>,
+  ) {
+    return await (overrideRepo || this.repo)
+      .createQueryBuilder()
+      .insert()
+      .values(newEventParameters)
+      .orIgnore()
+      .execute();
+    // .query(
+    //   `INSERT INTO "account_group"("name", "rollupNodeId", "departmentId", "businessUnitId")
+    //   VALUES($1, $2, $3, $4)
+    //   ON CONFLICT ("rollupNodeId", "departmentId", "businessUnitId", "rollupId")
+    //   DO UPDATE SET "deletedAt" = NULL, "name" = EXCLUDED.name;
+    // `,
+    //   [
+    //     newAccountGroup.name,
+    //     newAccountGroup.rollupNode.id,
+    //     newAccountGroup.departmentId,
+    //     newAccountGroup.businessUnitId,
+    //   ],
+    // );
   }
 
   createOneWithRelations(newEventParameter: NewEntity<EventParameter>) {
