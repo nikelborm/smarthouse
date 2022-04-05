@@ -2,7 +2,7 @@ import { IsString, IsUUID, MaxLength, MinLength } from 'class-validator';
 
 export class RequestedEventParameter {
   @IsUUID('4')
-  UUID: string;
+  uuid: string;
 
   @IsString()
   @MinLength(2)

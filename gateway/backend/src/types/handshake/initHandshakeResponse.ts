@@ -28,7 +28,7 @@ export class WiFiCredentials {
 
 export class GatewayInfo {
   @IsUUID('4')
-  UUID: string;
+  uuid: string;
 
   @IsUrl({ protocols: ['ws', 'wss'] })
   WSAdress: string; // IP address inside wifi network (not localhost, because it is not universal)

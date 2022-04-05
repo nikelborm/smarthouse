@@ -11,7 +11,7 @@ import { EventType } from '../eventType';
 
 export class RequestedEvent {
   @IsUUID('4')
-  UUID: string;
+  uuid: string;
 
   @IsString()
   @MinLength(2)

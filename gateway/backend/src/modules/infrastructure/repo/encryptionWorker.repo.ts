@@ -10,8 +10,8 @@ import {
   updateOnePlain,
   updateOneWithRelations,
 } from 'src/tools';
-import { Repository } from 'typeorm';
-import { EncryptionWorker } from '../model';
+import { EntityManager, Repository } from 'typeorm';
+import { Client, EncryptionWorker } from '../model';
 
 @Injectable()
 export class EncryptionWorkerRepo {
@@ -24,19 +24,36 @@ export class EncryptionWorkerRepo {
     return this.repo.find();
   }
 
-  async getOneById(id: number) {
-    const encryptionWorker = await this.repo.findOne({
-      where: { id },
+  async getInTransactionOneByUUID(
+    uuid: string,
+    transactionManager: EntityManager,
+  ) {
+    return this._getOneByUUID(
+      uuid,
+      transactionManager.getRepository(EncryptionWorker),
+    );
+  }
+
+  async getOneByUUID(uuid: string) {
+    return this._getOneByUUID(uuid);
+  }
+
+  private async _getOneByUUID(
+    uuid: string,
+    overrideRepo?: Repository<EncryptionWorker>,
+  ) {
+    const encryptionWorker = await (overrideRepo || this.repo).findOne({
+      where: { uuid },
     });
     if (!encryptionWorker)
       throw new BadRequestException(
-        messages.repo.common.cantGetNotFoundById('encryptionWorker', id),
+        messages.repo.common.cantGetNotFoundByUUID('encryptionWorker', uuid),
       );
     return encryptionWorker;
   }
 
-  createManyWithRelations(newEncryptionWorkers: NewEntity<EncryptionWorker>[]) {
-    return createManyWithRelations(
+  createManyWithRelations(newEncryptionWorkers: NewEncryptionWorker[]) {
+    return createManyWithRelations<any>(
       this.repo,
       newEncryptionWorkers,
       'encryptionWorker',
@@ -47,3 +64,20 @@ export class EncryptionWorkerRepo {
     await this.repo.delete(id);
   }
 }
+
+type NewEncryptionWorker = {
+  uuid: string;
+  name: string;
+  clients: Client[];
+};
+
+type UpdateDataValidatorPlain = {
+  uuid: string;
+  name?: string;
+};
+
+type UpdateDataValidatorWithRelations = {
+  uuid: string;
+  name?: string;
+  eventParameters?: Client[];
+};

@@ -1,16 +1,13 @@
-import { Entity, Column, PrimaryGeneratedColumn, OneToMany } from 'typeorm';
+import { Entity, Column, OneToMany } from 'typeorm';
 import { Client } from '.';
 
 @Entity({ name: 'encryption_worker' })
 export class EncryptionWorker {
-  @PrimaryGeneratedColumn({ name: 'encryption_worker_id' })
-  id!: number;
-
   @Column({
     name: 'encryption_worker_uuid',
     type: 'uuid',
     nullable: false,
-    unique: true,
+    primary: true,
   })
   uuid!: string;
 
