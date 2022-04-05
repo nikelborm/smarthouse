@@ -35,6 +35,21 @@ export class RouteRepo {
     return route;
   }
 
+  async getManyRoutesBySource(endpointId: number) {
+    const routes = await this.repo.findOne({
+      where: { sourceEndpointId: endpointId },
+      select: {
+        sinkEndpoint: {
+          clientId: true,
+        },
+      },
+      relations: {
+        sinkEndpoint: true,
+      },
+    });
+    return routes;
+  }
+
   createOneWithRelations(newRoute: NewEntity<Route>) {
     return createOneWithRelations(this.repo, newRoute, 'route');
   }

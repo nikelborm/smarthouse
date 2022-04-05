@@ -8,7 +8,7 @@ const messagesRepeating = {
 
 export const messages = {
   auth: {
-    incorrectUser: 'User with this email not found',
+    incorrectUser: 'User with this email was not found',
     incorrectPassword: 'Incorrect password',
     userHasNoAccessScopes:
       'This user has no access scopes. The user is not assigned to any access scope and has no additional role. Please contact the administrator',
@@ -68,11 +68,11 @@ export const messages = {
       cantGetNotFoundById: (entityName: string, id: number) =>
         `${startsWithCapital(
           entityName || 'entity',
-        )} with id={${id}} not found`,
+        )} with id={${id}} was not found`,
       cantGetNotFoundByUUID: (entityName: string, uuid: string) =>
         `${startsWithCapital(
           entityName || 'entity',
-        )} with uuid={${uuid}} not found`,
+        )} with uuid={${uuid}} was not found`,
       cantUpdateOneNotFound: (entityName: string, id: number) =>
         `Cannot update ${
           entityName || 'entity'
@@ -86,7 +86,7 @@ export const messages = {
           entityName || 'entity',
         )} with ids={${wantedToUpdateEntityIds.join()}}, because some ${
           entityName || 'entity'
-        }s with ids={${notExistingEntityIds.join()}} do not exist`,
+        }s with ids={${notExistingEntityIds.join()}} does not exist`,
       cantCreateOne: (entityName: string, newEntity: any) =>
         `Unable to create new ${entityName || 'entity'} JSON: {${JSON.stringify(
           newEntity,
