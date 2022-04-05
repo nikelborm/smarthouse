@@ -33,6 +33,14 @@ export class AuthMessage {
   credentials: Record<string, any>;
 }
 
+export class MessageParameter {
+  @IsUUID('4')
+  uuid: string;
+
+  @IsDefined()
+  value: string;
+}
+
 export class DecryptedRegularMessage {
   @IsUUID('4')
   messageUUID: string;
@@ -44,14 +52,6 @@ export class DecryptedRegularMessage {
   @ValidateNested({ each: true })
   @Type(() => MessageParameter)
   parameters?: MessageParameter[];
-}
-
-export class MessageParameter {
-  @IsUUID('4')
-  uuid: string;
-
-  @IsDefined()
-  value: string;
 }
 
 const validateConfig = {
