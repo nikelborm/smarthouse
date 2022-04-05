@@ -90,12 +90,3 @@ export class BaseMessage<T> {
   @Type(() => BaseMessageReport)
   report: BaseMessageReport;
 }
-
-console.log(
-  validate(
-    {
-      uuid: '1bba38b4-aed4-4b60-8832-10668bf836e4',
-    },
-    DecryptedRegularMessage,
-  ),
-);
