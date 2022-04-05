@@ -69,6 +69,10 @@ export const messages = {
         `${startsWithCapital(
           entityName || 'entity',
         )} with id={${id}} not found`,
+      cantGetNotFoundByUUID: (entityName: string, uuid: string) =>
+        `${startsWithCapital(
+          entityName || 'entity',
+        )} with uuid={${uuid}} not found`,
       cantUpdateOneNotFound: (entityName: string, id: number) =>
         `Cannot update ${
           entityName || 'entity'

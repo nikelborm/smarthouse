@@ -1,3 +1,4 @@
+import { AuthMessage, validate } from 'src/types';
 import { RawData, Server, WebSocket } from 'ws';
 import { model } from '../infrastructure';
 
@@ -13,7 +14,7 @@ export class WebsocketService {
     port: number;
     authRequestCB: AuthRequestCB;
     authedMessageCB: AuthedMessageCB;
-    authedClientOfflineCB?: OnlineStatusChangedCB;
+    authedClientOfflineCB: OnlineStatusChangedCB;
   }) {
     this.server = new Server({
       port: config.port,
@@ -25,8 +26,7 @@ export class WebsocketService {
     this.authedMessageCB = config.authedMessageCB;
     this.authedClientOfflineCB =
       config.authedClientOfflineCB ||
-      ((session) => console.log(`Client ${session.uuid} disconnected`));
-
+      (async (client) => console.log(`Client ${client.uuid} disconnected`));
     this.handleWSconnections();
     this.startDeadSocketCleaning();
   }
@@ -34,13 +34,13 @@ export class WebsocketService {
   getOnlineClientUUIDs() {
     return [...this.server.clients]
       .filter(({ isAuthorized }) => isAuthorized)
-      .map((connection) => connection.session.uuid);
+      .map((connection) => connection.client.uuid);
   }
 
   async sendToClientBy(UUID: string, document: Record<string, any>) {
     let wasClientFound = false;
     for (const connection of this.server.clients) {
-      if (connection.session.uuid === UUID) {
+      if (connection.client.uuid === UUID) {
         await this.sendInto(connection, document);
         wasClientFound = true;
       }
@@ -49,12 +49,12 @@ export class WebsocketService {
   }
 
   sendToManyClientsBy(
-    predicate: (session: model.Client) => boolean,
+    predicate: (client: model.Client) => boolean,
     document: Record<string, any>,
   ): void;
   sendToManyClientsBy(UUIDs: string[], document: Record<string, any>): void;
   sendToManyClientsBy(
-    UUIDsOrPredicate: string[] | ((session: model.Client) => boolean),
+    UUIDsOrPredicate: string[] | ((client: model.Client) => boolean),
     document: Record<string, any>,
   ) {
     const json = JSON.stringify(document);
@@ -62,12 +62,12 @@ export class WebsocketService {
     let predicate: (socket: WebSocketCustomClient) => boolean;
 
     if (typeof UUIDsOrPredicate == 'function') {
-      predicate = ({ isAuthorized, session }) =>
-        isAuthorized && UUIDsOrPredicate(session);
+      predicate = ({ isAuthorized, client }) =>
+        isAuthorized && UUIDsOrPredicate(client);
     } else {
       const uuids = new Set(UUIDsOrPredicate);
       predicate = (socket) =>
-        socket.isAuthorized && uuids.has(socket.session.uuid);
+        socket.isAuthorized && uuids.has(socket.client.uuid);
     }
 
     for (const connection of this.server.clients) {
@@ -89,7 +89,7 @@ export class WebsocketService {
       socket.on('close', () => {
         // TODO: проверить вызывается ли этот метод если мы teminate`нули девайс
         //? надо ли вызывать обработчик authorizedClientDisconnectedHandler в двух местах
-        this.authedClientOfflineCB(socket.session);
+        this.authedClientOfflineCB(socket.client);
       });
     });
   }
@@ -108,18 +108,22 @@ export class WebsocketService {
 
   private firstClientMessageHandler =
     (socket: WebSocketCustomClient) => async (message: RawData) => {
-      const parsedMessage = JSON.parse(message.toString());
-      const authorizationResult = await this.authRequestCB(parsedMessage);
-      if (authorizationResult.isAuthorized) {
-        socket.session = authorizationResult.session;
+      try {
+        const parsedMessage = JSON.parse(message.toString());
+
+        const authorizationResult = await this.authRequestCB(parsedMessage);
+        if (!authorizationResult.isAuthorized)
+          throw new Error('Authorization: Crypto worker denied auth');
+
+        socket.isAuthorized = true;
+        socket.client = authorizationResult.client;
+
         socket.on('message', async (message: RawData) => {
-          const parsedMessage = JSON.parse(message.toString());
-          await this.authedMessageCB(parsedMessage, socket.session);
+          await this.authedMessageCB(message, socket.client);
         });
-      } else {
-        await this.sendInto(socket, {
-          error: 'Authorization was unsucessfull',
-        });
+      } catch (error) {
+        if (error instanceof Error)
+          await this.sendInto(socket, { error: error.message });
         socket.close(1000);
       }
     };
@@ -141,27 +145,26 @@ export class WebsocketService {
 }
 
 interface WebSocketCustomClient extends WebSocket {
-  session: model.Client;
+  client: model.Client;
   isAuthorized: boolean;
   isAlive: boolean;
 }
 
-export type AuthRequestCB = (
-  message: Message,
-) => Promise<AuthRequestResult> | AuthRequestResult;
+export interface AuthRequestCB {
+  (parsedMessage: AuthMessage): Promise<AuthRequestResult> | AuthRequestResult;
+}
+
+export interface AuthedMessageCB {
+  (rawEncryptedMessage: RawData, client: model.Client): Promise<any>;
+}
+
+export interface OnlineStatusChangedCB {
+  (client: model.Client): Promise<any>;
+}
 
 export type AuthRequestResult =
   | { isAuthorized: false }
   | {
       isAuthorized: true;
-      session: model.Client;
+      client: model.Client;
     };
-
-export type AuthedMessageCB = (
-  message: Message,
-  session: model.Client,
-) => Promise<any> | any;
-
-type OnlineStatusChangedCB = (session: model.Client) => Promise<any> | any;
-
-type Message = Record<string, any>;
