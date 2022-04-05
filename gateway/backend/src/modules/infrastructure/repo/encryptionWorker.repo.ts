@@ -1,15 +1,7 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { messages } from 'src/config';
-import {
-  createManyWithRelations,
-  createOneWithRelations,
-  NewEntity,
-  PlainEntityWithoutId,
-  UpdatedEntity,
-  updateOnePlain,
-  updateOneWithRelations,
-} from 'src/tools';
+import { createManyPlain } from 'src/tools';
 import { EntityManager, Repository } from 'typeorm';
 import { Client, EncryptionWorker } from '../model';
 
@@ -52,8 +44,8 @@ export class EncryptionWorkerRepo {
     return encryptionWorker;
   }
 
-  createManyWithRelations(newEncryptionWorkers: NewEncryptionWorker[]) {
-    return createManyWithRelations<any>(
+  createManyPlain(newEncryptionWorkers: NewEncryptionWorker[]) {
+    return createManyPlain<any>(
       this.repo,
       newEncryptionWorkers,
       'encryptionWorker',
@@ -68,16 +60,5 @@ export class EncryptionWorkerRepo {
 type NewEncryptionWorker = {
   uuid: string;
   name: string;
-  clients: Client[];
-};
-
-type UpdateDataValidatorPlain = {
-  uuid: string;
-  name?: string;
-};
-
-type UpdateDataValidatorWithRelations = {
-  uuid: string;
-  name?: string;
-  eventParameters?: Client[];
+  clients?: Client[];
 };

@@ -11,6 +11,8 @@ export class WithoutEncryptionService
 {
   uuid = 'ca4e23ec-f2a4-4d78-aa94-2065d72d5824';
 
+  name = 'worker without real encryption, just for test';
+
   async getServerSideHandshakeCredentials(
     clientSideHandshakeCredentials: Record<string, never>,
   ) {

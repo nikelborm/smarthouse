@@ -4,9 +4,9 @@ type IndexedObject<T> = {
   [key in IndexKey]: T;
 };
 
-export function remapToIndexedObject<T extends { id: IndexKey }>(
+export function remapToIndexedObject<T>(
   array: T[],
-  getIndexKey: IndexKeyGetter<T> = (val) => val.id,
+  getIndexKey: IndexKeyGetter<T> = (val) => val['id'],
 ) {
   const map: IndexedObject<T> = Object.create(null);
 

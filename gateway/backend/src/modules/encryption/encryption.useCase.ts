@@ -1,17 +1,16 @@
-import { Injectable } from '@nestjs/common';
-import { IEncryptionWorker } from './IEncryptionWorker';
-import * as workers from './workers';
+import { Inject, Injectable } from '@nestjs/common';
+import {
+  ENCRYPTION_MODULE_INITIALIZER_KEY,
+  EncryptionWorkerStoreFormat,
+} from './encryptionModuleInitializer.provider';
 
 @Injectable()
 export class EncryptionUseCase {
-  constructor() {
-    for (const Worker of Object.values(workers)) {
-      const workerInstance = Object.freeze(new Worker());
-      if (!workerInstance.uuid) {
-        throw new Error('Found encryption worker without uuid');
-      }
-      this.store[workerInstance.uuid] = workerInstance;
-    }
+  constructor(
+    @Inject(ENCRYPTION_MODULE_INITIALIZER_KEY)
+    initialStore: EncryptionWorkerStoreFormat,
+  ) {
+    this.store = initialStore;
   }
 
   getEncryptionWorker(uuid: string) {
@@ -20,7 +19,5 @@ export class EncryptionUseCase {
     return this.store[uuid];
   }
 
-  private store: {
-    [uuid in string]: IEncryptionWorker<any, any, any>;
-  } = Object.create(null);
+  private store: EncryptionWorkerStoreFormat = Object.create(null);
 }
