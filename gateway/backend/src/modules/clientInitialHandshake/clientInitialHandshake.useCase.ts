@@ -1,13 +1,10 @@
 import { Injectable } from '@nestjs/common';
-import {
-  InitHandshakeQuery,
-  InitHandshakeResponse,
-  RequestedEventParameter,
-} from 'src/types';
+import { InitHandshakeQuery, InitHandshakeResponse } from 'src/types';
 import { EntityManager } from 'typeorm';
 import { InjectEntityManager } from '@nestjs/typeorm';
 import { repo } from '../infrastructure';
 import { EncryptionUseCase } from '../encryption';
+import { doesArraysIntersects } from 'src/tools';
 
 @Injectable()
 export class ClientInitialHandshakeUseCase {
@@ -47,17 +44,11 @@ export class ClientInitialHandshakeUseCase {
       handshakeRequest.encryptionWorkerUUID,
     );
 
-    if (
-      !encryptionWorker.isClientSideHandshakeCredentialsValid(
-        handshakeRequest.encryptionWorkerCredentials,
-      )
-    )
-      throw new Error('You have sent bad credentials');
-
     await this.eventParameterRepo.insertInTransactionOnlyNewEventParameters(
       handshakeRequest.supported.eventParameters,
       transactionManager,
     );
+
     // RequestedEventParameter
     // RequestedEndpoint
 
@@ -94,5 +85,43 @@ export class ClientInitialHandshakeUseCase {
         encryptionModuleCredentials: {}, //credentialsToSendBackToClient,
       },
     };
+  }
+
+  async validateHandshakeRequest(
+    transactionManager: EntityManager,
+    {
+      supported: { eventParameters, events, routeEndpoints, transport },
+      encryptionWorkerCredentials,
+      ...restHandshake
+    }: InitHandshakeQuery,
+    encryptionWorker,
+  ) {
+    if (
+      !encryptionWorker.isClientSideHandshakeCredentialsValid(
+        encryptionWorkerCredentials,
+      )
+    )
+      throw new Error('You have sent bad credentials');
+
+    this.areThereDuplicateUUIDs(eventParameters, 'event parameter');
+    this.areThereDuplicateUUIDs(events, 'event');
+    this.areThereDuplicateUUIDs(routeEndpoints, 'route endpoint');
+
+    for (const { optionalParameterUUIDs, requiredParameterUUIDs } of events) {
+      if (doesArraysIntersects(optionalParameterUUIDs, requiredParameterUUIDs))
+        throw new Error(
+          'Some of your events have one parameter in both required and optional parameters',
+        );
+    }
+  }
+
+  areThereDuplicateUUIDs<T extends { uuid: string }>(
+    entities: T[],
+    entityName: string,
+  ) {
+    const entitiesUUIDs = entities.map(({ uuid }) => uuid);
+    const entitiesUUIDsWithoutDuplicates = new Set(entitiesUUIDs);
+    if (entitiesUUIDsWithoutDuplicates.size !== entitiesUUIDs.length)
+      throw new Error(`You requested duplicate ${entityName}s uuids`);
   }
 }

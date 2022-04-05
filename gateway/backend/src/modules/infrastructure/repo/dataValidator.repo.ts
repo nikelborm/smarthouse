@@ -1,17 +1,9 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { messages } from 'src/config';
-import {
-  createManyWithRelations,
-  createOneWithRelations,
-  NewEntity,
-  PlainEntityWithoutId,
-  UpdatedEntity,
-  updateOnePlain,
-  updateOneWithRelations,
-} from 'src/tools';
+import { createManyPlain, createOneWithRelations } from 'src/tools';
 import { Repository } from 'typeorm';
-import { DataValidator, EventParameter } from '../model';
+import { DataValidator } from '../model';
 
 @Injectable()
 export class DataValidatorRepo {
@@ -43,12 +35,8 @@ export class DataValidatorRepo {
     );
   }
 
-  createManyWithRelations(newDataValidators: NewDataValidator[]) {
-    return createManyWithRelations<any>(
-      this.repo,
-      newDataValidators,
-      'dataValidator',
-    );
+  createManyPlain(newDataValidators: NewDataValidator[]) {
+    return createManyPlain<any>(this.repo, newDataValidators, 'dataValidator');
   }
 
   async delete(id: number) {
@@ -59,5 +47,4 @@ export class DataValidatorRepo {
 type NewDataValidator = {
   uuid: string;
   name: string;
-  eventParameters?: EventParameter[];
 };
