@@ -35,6 +35,58 @@ export class ClientRepo {
     return client;
   }
 
+  async getOneWithInfoAboutSupportedStuffBy(uuid: string) {
+    const client = await this.repo.findOne({
+      where: { uuid },
+      select: {
+        id: true,
+        encryptionWorker: {
+          uuid: true,
+        },
+        endpoints: {
+          id: true,
+          uuid: true,
+          type: true,
+          event: {
+            id: true,
+            uuid: true,
+            type: true,
+            parameterAssociations: {
+              eventParameter: {
+                id: true,
+                uuid: true,
+                dataValidator: {
+                  uuid: true,
+                },
+              },
+              isParameterRequired: true,
+            },
+          },
+        },
+      },
+      relations: {
+        encryptionWorker: {
+          uuid: true,
+        },
+        endpoints: {
+          event: {
+            parameterAssociations: {
+              eventParameter: {
+                dataValidator: true,
+              },
+            },
+          },
+        },
+      },
+    });
+    if (!client)
+      throw new BadRequestException(
+        messages.repo.common.cantGetNotFoundByUUID('client', uuid),
+      );
+    client.uuid = uuid;
+    return client;
+  }
+
   createOneWithRelations(newClient: NewEntity<Client>) {
     return createOneWithRelations(this.repo, newClient, 'client');
   }

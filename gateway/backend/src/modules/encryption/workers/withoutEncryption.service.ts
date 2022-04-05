@@ -1,4 +1,3 @@
-import { WSMessage } from 'src/types';
 import { IEncryptionWorker } from '../IEncryptionWorker';
 
 export class WithoutEncryptionService
@@ -11,35 +10,39 @@ export class WithoutEncryptionService
 {
   uuid = 'ca4e23ec-f2a4-4d78-aa94-2065d72d5824';
 
-  getServerSideHandshakeCredentials(
+  async getServerSideHandshakeCredentials(
     clientSideHandshakeCredentials: Record<string, never>,
-  ): {
-    credentialsToSendBackToClient: Record<string, never>;
-    credentialsToStoreInDatabase: Record<string, never>;
-  } {
+  ) {
     return {
       credentialsToSendBackToClient: {},
       credentialsToStoreInDatabase: {},
     };
   }
 
-  validateClientSideHandshakeCredentials(
+  async validateClientSideHandshakeCredentials(
     clientSideHandshakeCredentials: Record<string, never>,
-  ): boolean {
+  ) {
     return true;
   }
 
-  encryptMessageToSendToClient(
+  async encryptJsonStringToSendToClient(
     credentialsFromDatabase: Record<string, never>,
-    message: WSMessage,
-  ): string {
+    message: string,
+  ) {
     return JSON.stringify(message);
   }
 
-  decryptMessageSentFromClient(
+  async decryptEncryptedJsonStringSentFromClient(
     credentialsFromDatabase: Record<string, never>,
     encryptedMessage: string,
-  ): WSMessage {
+  ) {
     return JSON.parse(encryptedMessage);
+  }
+
+  async validateAuthRequestFromClient(
+    credentialsFromDatabase: Record<string, never>,
+    authRequestMessage: Record<string, any>,
+  ) {
+    return true;
   }
 }
