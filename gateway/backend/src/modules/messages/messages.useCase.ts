@@ -76,7 +76,8 @@ export class MessagesUseCase {
       const parsedMessage: DecryptedRegularMessage = JSON.parse(jsonString);
 
       const validationErrors = validate(parsedMessage, DecryptedRegularMessage);
-      if (validationErrors.length) throw new Error('Validation error');
+      if (validationErrors.length)
+        throw new Error('Message from authorized client: Validation error');
 
       const endpoint = client.endpoints.find(
         ({ uuid }) => parsedMessage.endpointUUID === uuid,

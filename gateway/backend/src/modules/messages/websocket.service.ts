@@ -1,4 +1,4 @@
-import { AuthMessage, validate } from 'src/types';
+import { AuthMessage } from 'src/types';
 import { RawData, Server, WebSocket } from 'ws';
 import { model } from '../infrastructure';
 
