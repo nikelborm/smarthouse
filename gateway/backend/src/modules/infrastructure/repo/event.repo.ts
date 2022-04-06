@@ -24,6 +24,23 @@ export class EventRepo {
     return this.repo.find();
   }
 
+  getInTransactionWithIdsBy(
+    uuids: string[],
+    transactionManager: EntityManager,
+  ) {
+    return this._getWithIdsBy(uuids, transactionManager.getRepository(Event));
+  }
+
+  private async _getWithIdsBy(
+    uuids: string[],
+    overrideRepo?: Repository<Event>,
+  ) {
+    const events = await (overrideRepo || this.repo).find({
+      where: uuids.map((uuid) => ({ uuid })),
+    });
+    return events;
+  }
+
   async getOneById(id: number) {
     const event = await this.repo.findOne({
       where: { id },

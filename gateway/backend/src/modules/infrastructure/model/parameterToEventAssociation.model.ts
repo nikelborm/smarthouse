@@ -50,9 +50,16 @@ export class ParameterToEventAssociation {
   })
   isParameterRequired!: boolean;
 
-  @CreateDateColumn({ type: 'timestamptz', nullable: false })
+  @CreateDateColumn({
+    type: 'timestamptz',
+    nullable: false,
+    name: 'parameter_to_event_association_created_at',
+  })
   createdAt!: Date;
 
-  @UpdateDateColumn({ type: 'timestamptz', nullable: false })
+  @UpdateDateColumn({
+    type: 'timestamptz',
+    name: 'parameter_to_event_association_updated_at',
+  })
   updatedAt!: Date;
 }

@@ -42,9 +42,16 @@ export class Route {
   })
   sinkEndpointId: number;
 
-  @CreateDateColumn({ type: 'timestamptz', nullable: false })
+  @CreateDateColumn({
+    type: 'timestamptz',
+    nullable: false,
+    name: 'route_created_at',
+  })
   createdAt!: Date;
 
-  @UpdateDateColumn({ type: 'timestamptz', nullable: false })
+  @UpdateDateColumn({
+    type: 'timestamptz',
+    name: 'route_updated_at',
+  })
   updatedAt!: Date;
 }

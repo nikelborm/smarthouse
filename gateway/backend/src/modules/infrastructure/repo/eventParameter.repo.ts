@@ -35,6 +35,30 @@ export class EventParameterRepo {
     return eventParameter;
   }
 
+  getInTransactionWithIdsBy(
+    uuids: string[],
+    transactionManager: EntityManager,
+  ) {
+    return this._getWithIdsBy(
+      uuids,
+      transactionManager.getRepository(EventParameter),
+    );
+  }
+
+  private async _getWithIdsBy(
+    uuids: string[],
+    overrideRepo?: Repository<EventParameter>,
+  ) {
+    const eventParameters = await (overrideRepo || this.repo).find({
+      where: uuids.map((uuid) => ({ uuid })),
+      select: {
+        id: true,
+        uuid: true,
+      },
+    });
+    return eventParameters;
+  }
+
   insertInTransactionOnlyNewEventParameters(
     newEventParameters: NewEntity<EventParameter>[],
     transactionManager: EntityManager,
