@@ -52,6 +52,8 @@ export const DataValidatorModuleInitializer = {
           uuid,
         })),
       );
+
+    return validatorsStore;
   },
   inject: [repo.DataValidatorRepo],
 };

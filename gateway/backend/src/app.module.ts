@@ -4,16 +4,18 @@ import { ConfigModule } from '@nestjs/config';
 import { appConfig, dbConfig } from './config';
 import { AccessLogMiddleware } from './tools';
 
-import { InfrastructureModule } from './modules/infrastructure';
-import { ClientInitialHandshakeModule } from './modules/clientInitialHandshake';
-import { ClientManagementModule } from './modules/clientManagement';
-import { EventModule } from './modules/event';
-import { EventParameterModule } from './modules/eventParameter';
-import { GatewayEndpointsModule } from './modules/gatewayEndpoints';
-import { MessagesModule } from './modules/messages';
-import { RouteModule } from './modules/route';
-import { DataValidatorModule } from './modules/dataValidator';
-import { EncryptionModule } from './modules/encryption';
+import {
+  InfrastructureModule,
+  ClientInitialHandshakeModule,
+  ClientManagementModule,
+  EventModule,
+  EventParameterModule,
+  GatewayEndpointsModule,
+  MessagesModule,
+  RouteModule,
+  DataValidatorModule,
+  EncryptionModule,
+} from './modules';
 
 @Module({
   imports: [

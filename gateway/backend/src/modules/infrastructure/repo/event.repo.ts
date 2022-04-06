@@ -10,7 +10,7 @@ import {
   updateOnePlain,
   updateOneWithRelations,
 } from 'src/tools';
-import { Repository } from 'typeorm';
+import { EntityManager, Repository } from 'typeorm';
 import { Event } from '../model';
 
 @Injectable()
@@ -37,6 +37,41 @@ export class EventRepo {
 
   createOneWithRelations(newEvent: NewEntity<Event>) {
     return createOneWithRelations(this.repo, newEvent, 'event');
+  }
+
+  insertInTransactionOnlyNewEvents(
+    newEvents: NewEntity<Event>[],
+    transactionManager: EntityManager,
+  ) {
+    return this._insertOnlyNewEvents(
+      newEvents,
+      transactionManager.getRepository(Event),
+    );
+  }
+
+  private async _insertOnlyNewEvents(
+    newEvents: NewEntity<Event>[],
+    overrideRepo?: Repository<Event>,
+  ) {
+    return await (overrideRepo || this.repo)
+      .createQueryBuilder()
+      .insert()
+      .values(newEvents)
+      .orIgnore()
+      .execute();
+    // .query(
+    //   `INSERT INTO "account_group"("name", "rollupNodeId", "departmentId", "businessUnitId")
+    //   VALUES($1, $2, $3, $4)
+    //   ON CONFLICT ("rollupNodeId", "departmentId", "businessUnitId", "rollupId")
+    //   DO UPDATE SET "deletedAt" = NULL, "name" = EXCLUDED.name;
+    // `,
+    //   [
+    //     newAccountGroup.name,
+    //     newAccountGroup.rollupNode.id,
+    //     newAccountGroup.departmentId,
+    //     newAccountGroup.businessUnitId,
+    //   ],
+    // );
   }
 
   createManyWithRelations(
