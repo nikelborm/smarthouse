@@ -5,11 +5,18 @@ import {
   ManyToOne,
   JoinColumn,
   OneToMany,
+  Unique,
+  Check,
 } from 'typeorm';
 import { EndpointType } from 'src/types';
 import { Client, Event, Route } from './';
 
 @Entity({ name: 'endpoint' })
+@Unique(['clientId', 'shortcode'])
+@Unique(['clientId', 'name'])
+@Check(
+  `(type <> 'universalSink' AND "eventId" is not null) OR (type = 'universalSink' AND "eventId" is null)`,
+)
 export class Endpoint {
   @PrimaryGeneratedColumn({ name: 'endpoint_id' })
   id!: number;

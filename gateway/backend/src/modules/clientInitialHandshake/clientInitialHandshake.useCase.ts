@@ -4,7 +4,8 @@ import { EntityManager } from 'typeorm';
 import { InjectEntityManager } from '@nestjs/typeorm';
 import { repo } from '../infrastructure';
 import { EncryptionUseCase } from '../encryption';
-import { doesArraysIntersects } from 'src/tools';
+import { differenceBetweenSetsInArray, doesArraysIntersects } from 'src/tools';
+import { IEncryptionWorker } from '../encryption/IEncryptionWorker';
 
 @Injectable()
 export class ClientInitialHandshakeUseCase {
@@ -94,7 +95,7 @@ export class ClientInitialHandshakeUseCase {
       encryptionWorkerCredentials,
       ...restHandshake
     }: InitHandshakeQuery,
-    encryptionWorker,
+    encryptionWorker: IEncryptionWorker<any, any, any>,
   ) {
     if (
       !encryptionWorker.isClientSideHandshakeCredentialsValid(
@@ -113,6 +114,19 @@ export class ClientInitialHandshakeUseCase {
           'Some of your events have one parameter in both required and optional parameters',
         );
     }
+    const parameterUUIDsRequestedByEvents = new Set(
+      events.flatMap((event) => [
+        ...event.optionalParameterUUIDs,
+        ...event.requiredParameterUUIDs,
+      ]),
+    );
+
+    const grantedParameterUUIDs = eventParameters.map(({ uuid }) => uuid);
+
+    const unknownParameterUUIDsRequestedByEvents = differenceBetweenSetsInArray(
+      new Set(grantedParameterUUIDs),
+      parameterUUIDsRequestedByEvents,
+    );
   }
 
   areThereDuplicateUUIDs<T extends { uuid: string }>(
