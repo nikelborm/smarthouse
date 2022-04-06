@@ -11,13 +11,11 @@ export class EncryptionUseCase {
     initialStore: EncryptionWorkerStoreFormat,
   ) {
     this.store = initialStore;
-    console.log('initialStore: ', initialStore);
   }
 
   getEncryptionWorker(uuid: string) {
     if (!this.store[uuid])
       throw new Error(`There are no encryption worker with uuid={${uuid}}`);
-    console.log(uuid, 'passed?');
     return this.store[uuid];
   }
 

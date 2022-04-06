@@ -1,10 +1,14 @@
 import { Injectable } from '@nestjs/common';
 import { InitHandshakeQuery, InitHandshakeResponse, validate } from 'src/types';
-import { DeepPartial, EntityManager } from 'typeorm';
+import { DeepPartial, EntityManager, InsertResult } from 'typeorm';
 import { InjectEntityManager } from '@nestjs/typeorm';
 import { model, repo } from '../infrastructure';
 import { EncryptionUseCase } from '../encryption';
-import { differenceBetweenSetsInArray, doesArraysIntersects } from 'src/tools';
+import {
+  differenceBetweenSetsInArray,
+  doesArraysIntersects,
+  remapToIndexedObject,
+} from 'src/tools';
 import { IEncryptionWorker } from '../encryption/IEncryptionWorker';
 
 @Injectable()
@@ -13,24 +17,16 @@ export class ClientInitialHandshakeUseCase {
     @InjectEntityManager()
     private readonly entityManager: EntityManager,
     private readonly eventRepo: repo.EventRepo,
-    private readonly encryptionWorkerRepo: repo.EncryptionWorkerRepo,
     private readonly encryptionUseCase: EncryptionUseCase,
     private readonly clientRepo: repo.ClientRepo,
     private readonly eventParameterRepo: repo.EventParameterRepo,
+    private readonly endpointRepo: repo.EndpointRepo,
     private readonly parameterToEventAssociationRepo: repo.ParameterToEventAssociationRepo,
   ) {}
 
   async init(handshakeRequest: InitHandshakeQuery) {
-    return new Promise<InitHandshakeResponse>((resolve, reject) => {
-      this.entityManager.transaction(async (transactionManager) => {
-        try {
-          resolve(
-            await this.renameMeLater(transactionManager, handshakeRequest),
-          );
-        } catch (error) {
-          reject(error);
-        }
-      });
+    return await this.entityManager.transaction(async (transactionManager) => {
+      return await this.renameMeLater(transactionManager, handshakeRequest);
     });
   }
 
@@ -44,14 +40,26 @@ export class ClientInitialHandshakeUseCase {
       handshakeRequest.encryptionWorkerUUID,
     );
 
-    const asd =
-      await this.eventParameterRepo.insertInTransactionOnlyNewEventParameters(
-        handshakeRequest.supported.eventParameters,
-        transactionManager,
-      );
-    console.log('asd: ', asd);
+    // eslint-disable-next-line prefer-const
+    let generatedEventParameters: { id: number; uuid: string }[];
 
-    const eventToParameterAssociationsToInsert = [];
+    try {
+      ({ generatedMaps: generatedEventParameters } =
+        (await this.eventParameterRepo.insertInTransactionOnlyNewEventParameters(
+          handshakeRequest.supported.eventParameters,
+          transactionManager,
+        )) as any);
+    } catch (error) {
+      throw new Error(
+        'Some of your required data validators does not implemented',
+      );
+    }
+
+    const eventToParameterAssociationsToInsert: {
+      eventParameterUUID: string;
+      eventUUID: string;
+      isParameterRequired: boolean;
+    }[] = [];
     const eventsToInsert: Partial<model.Event>[] = [];
 
     for (const {
@@ -74,33 +82,56 @@ export class ClientInitialHandshakeUseCase {
       eventsToInsert.push(event);
     }
 
-    await this.eventRepo.insertInTransactionOnlyNewEvents(
-      eventsToInsert,
-      transactionManager,
+    const { generatedMaps: generatedEvents } =
+      (await this.eventRepo.insertInTransactionOnlyNewEvents(
+        eventsToInsert,
+        transactionManager,
+      )) as any as { generatedMaps: { id: number; uuid: string }[] };
+
+    const indexedEvents = remapToIndexedObject(
+      generatedEvents,
+      ({ uuid }) => uuid,
+    );
+    const indexedEventParameters = remapToIndexedObject(
+      generatedEventParameters,
+      ({ uuid }) => uuid,
     );
 
-    // RequestedEventParameter
-    // RequestedEndpoint
+    const parameterToEventAssociationOnlyFromNewEvents =
+      eventToParameterAssociationsToInsert
+        .filter(({ eventUUID }) => eventUUID in indexedEvents)
+        .map(({ eventParameterUUID, eventUUID, isParameterRequired }) => ({
+          eventId: indexedEvents[eventUUID].id,
+          eventParameterId: indexedEventParameters[eventParameterUUID].id,
+          isParameterRequired,
+        }));
+
+    await this.parameterToEventAssociationRepo.createManyPlainInTransaction(
+      parameterToEventAssociationOnlyFromNewEvents,
+      transactionManager,
+    );
 
     const { credentialsToStoreInDatabase, credentialsToSendBackToClient } =
       await encryptionWorker.getServerSideHandshakeCredentials(
         handshakeRequest.encryptionWorkerCredentials,
       );
 
-    await this.clientRepo.createOneInTransactionWithRelations(
-      {
-        uuid: handshakeRequest.uuid,
-        description: handshakeRequest.description,
-        fullname: handshakeRequest.description,
-        shortname: handshakeRequest.description,
-        encryptionWorkerCredentials: credentialsToStoreInDatabase,
-        encryptionWorkerUUID: handshakeRequest.encryptionWorkerUUID,
-        // endpoints,
-      },
-      transactionManager,
-    );
+    const { id: registeredClientId } =
+      await this.clientRepo.createOneInTransactionWithRelations(
+        {
+          uuid: handshakeRequest.uuid,
+          shortname: handshakeRequest.shortname,
+          fullname: handshakeRequest.fullname,
+          description: handshakeRequest.description,
+          encryptionWorkerUUID: handshakeRequest.encryptionWorkerUUID,
+          encryptionWorkerCredentials: credentialsToStoreInDatabase,
+        },
+        transactionManager,
+      );
 
-    this.eventRepo.createManyWithRelations([{}]);
+    // await this.endpointRepo.createManyPlainInTransaction(
+
+    // );
 
     return {
       registeredClientId: 123,
@@ -127,7 +158,6 @@ export class ClientInitialHandshakeUseCase {
     } = initHandshakeQuery;
 
     const validationErrors = validate(initHandshakeQuery, InitHandshakeQuery);
-    console.log('validationErrors: ', validationErrors);
     if (validationErrors.length)
       throw new Error('InitHandshakeQuery: validation error');
 

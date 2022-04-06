@@ -58,6 +58,7 @@ export class EventRepo {
       .insert()
       .values(newEvents)
       .orIgnore()
+      .returning(['id', 'uuid'])
       .execute();
     // .query(
     //   `INSERT INTO "account_group"("name", "rollupNodeId", "departmentId", "businessUnitId")

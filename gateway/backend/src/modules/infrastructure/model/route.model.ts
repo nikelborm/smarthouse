@@ -6,6 +6,8 @@ import {
   Index,
   Unique,
   JoinColumn,
+  CreateDateColumn,
+  UpdateDateColumn,
 } from 'typeorm';
 import { Endpoint } from './';
 
@@ -39,4 +41,10 @@ export class Route {
     name: 'sink_endpoint_id',
   })
   sinkEndpointId: number;
+
+  @CreateDateColumn({ type: 'timestamptz', nullable: false })
+  createdAt!: Date;
+
+  @UpdateDateColumn({ type: 'timestamptz', nullable: false })
+  updatedAt!: Date;
 }

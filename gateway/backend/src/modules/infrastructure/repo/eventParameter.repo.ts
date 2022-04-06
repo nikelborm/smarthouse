@@ -54,6 +54,7 @@ export class EventParameterRepo {
       .insert()
       .values(newEventParameters)
       .orIgnore()
+      .returning(['id', 'uuid'])
       .execute();
     // .query(
     //   `INSERT INTO "account_group"("name", "rollupNodeId", "departmentId", "businessUnitId")

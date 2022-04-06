@@ -7,6 +7,8 @@ import {
   OneToMany,
   Unique,
   Check,
+  CreateDateColumn,
+  UpdateDateColumn,
 } from 'typeorm';
 import { EndpointType } from 'src/types';
 import { Client, Event, Route } from './';
@@ -97,5 +99,11 @@ export class Endpoint {
     length: 6,
   })
   hexColor!: string;
+
+  @CreateDateColumn({ type: 'timestamptz', nullable: false })
+  createdAt!: Date;
+
+  @UpdateDateColumn({ type: 'timestamptz', nullable: false })
+  updatedAt!: Date;
   // configuration?????
 }

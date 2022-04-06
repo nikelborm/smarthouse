@@ -1,5 +1,12 @@
 import { EventType } from 'src/types';
-import { Entity, Column, PrimaryGeneratedColumn, OneToMany } from 'typeorm';
+import {
+  Entity,
+  Column,
+  PrimaryGeneratedColumn,
+  OneToMany,
+  CreateDateColumn,
+  UpdateDateColumn,
+} from 'typeorm';
 import { Endpoint, ParameterToEventAssociation } from '.';
 
 @Entity({ name: 'event' })
@@ -63,4 +70,10 @@ export class Event {
     length: 6,
   })
   hexColor!: string;
+
+  @CreateDateColumn({ type: 'timestamptz', nullable: false })
+  createdAt!: Date;
+
+  @UpdateDateColumn({ type: 'timestamptz', nullable: false })
+  updatedAt!: Date;
 }

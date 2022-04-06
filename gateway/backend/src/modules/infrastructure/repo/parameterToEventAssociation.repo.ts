@@ -2,7 +2,7 @@ import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { messages } from 'src/config';
 import {
-  createManyWithRelations,
+  createManyPlain,
   createOneWithRelations,
   NewEntity,
   PlainEntityWithoutId,
@@ -10,7 +10,7 @@ import {
   updateOnePlain,
   updateOneWithRelations,
 } from 'src/tools';
-import { Repository } from 'typeorm';
+import { EntityManager, Repository } from 'typeorm';
 import { ParameterToEventAssociation } from '../model';
 
 @Injectable()
@@ -48,11 +48,22 @@ export class ParameterToEventAssociationRepo {
     );
   }
 
-  createManyWithRelations(
-    newParameterToEventAssociations: NewEntity<ParameterToEventAssociation>[],
+  createManyPlainInTransaction(
+    newParameterToEventAssociations: PlainEntityWithoutId<ParameterToEventAssociation>[],
+    transactionManager: EntityManager,
   ) {
-    return createManyWithRelations(
-      this.repo,
+    return this._createManyPlain(
+      newParameterToEventAssociations,
+      transactionManager.getRepository(ParameterToEventAssociation),
+    );
+  }
+
+  private _createManyPlain(
+    newParameterToEventAssociations: PlainEntityWithoutId<ParameterToEventAssociation>[],
+    overrideRepo?: Repository<ParameterToEventAssociation>,
+  ) {
+    return createManyPlain(
+      overrideRepo || this.repo,
       newParameterToEventAssociations,
       'parameterToEventAssociation',
     );
