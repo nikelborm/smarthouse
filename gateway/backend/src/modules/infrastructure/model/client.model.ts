@@ -5,6 +5,8 @@ import {
   OneToMany,
   ManyToOne,
   JoinColumn,
+  CreateDateColumn,
+  UpdateDateColumn,
 } from 'typeorm';
 import { EncryptionWorkerCredentialsStoredInDB } from 'src/types';
 import { Endpoint, EncryptionWorker } from '.';
@@ -62,6 +64,7 @@ export class Client {
     type: 'timestamptz',
     nullable: false,
     name: 'client_was_last_active_at',
+    default: 'now()',
   })
   wasLastActiveAt!: Date;
 
@@ -90,5 +93,10 @@ export class Client {
   @OneToMany(() => Endpoint, (endpoint) => endpoint.client)
   endpoints!: Endpoint[];
 
+  @CreateDateColumn({ type: 'timestamptz', nullable: false })
+  createdAt!: Date;
+
+  @UpdateDateColumn({ type: 'timestamptz', nullable: false })
+  updatedAt!: Date;
   // TODO: configuration?????
 }

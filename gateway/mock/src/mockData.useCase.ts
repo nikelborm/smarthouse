@@ -7,7 +7,7 @@ import { EndpointType, EventType } from 'src/types';
 @Injectable()
 export class MockDataUseCase {
   constructor(
-    private readonly routeRepo: repo.RouteRepo,
+    private readonly eventRepo: repo.EventRepo,
     private readonly clientInitialHandshakeUseCase: ClientInitialHandshakeUseCase,
   ) {}
 
@@ -20,14 +20,9 @@ export class MockDataUseCase {
 
       uuid: '51eea88c-9c7c-49a5-b38c-a1526ac88e0f',
 
-      encryptionWorkerUUID: 'ca4e23ec-f2a4-4d78-aa94-206s5d72d5824',
+      encryptionWorkerUUID: 'ca4e23ec-f2a4-4d78-aa94-2065d72d5824',
 
-      encryptionWorkerCredentials: {
-        clientPublicKey: 'public client key of esp8266',
-        clientUUIDSignedByClientPrivateKey:
-          'blablablablablabalblalbabalbbalablablalbablaabllbaablabalbalablablablabalb',
-      },
-
+      encryptionWorkerCredentials: {},
       supported: {
         eventParameters: [
           {
@@ -63,7 +58,7 @@ export class MockDataUseCase {
               'Команда, которая приводит к установки статуса блокировки двери',
             type: EventType.COMMAND,
             requiredParameterUUIDs: ['b0f1315d-b681-4a39-b50c-ad30b0740d96'],
-            optionalParameterUUIDs: ['b0f1315d-b681-4a39-b50c-ad30b0740d96'],
+            optionalParameterUUIDs: [],
             hexColor: '126067',
           },
           {
@@ -140,7 +135,16 @@ export class MockDataUseCase {
       },
     };
     try {
-      await this.clientInitialHandshakeUseCase.init(asd);
+      await this.eventRepo.createOneWithRelations({
+        uuid: 'adcb7802-a91c-44cb-8404-fd01d2af4624',
+        name: 'Установить статус блокировки двери',
+        description:
+          'Команда, которая приводит к установки статуса блокировки двери',
+        type: EventType.COMMAND,
+        hexColor: '126067',
+      });
+      const asd2 = await this.clientInitialHandshakeUseCase.init(asd);
+      console.log('asd2: ', asd2);
     } catch (error) {
       console.log('error: ', error);
     }

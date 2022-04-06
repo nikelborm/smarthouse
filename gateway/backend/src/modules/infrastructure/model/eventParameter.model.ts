@@ -5,6 +5,8 @@ import {
   ManyToOne,
   OneToMany,
   JoinColumn,
+  CreateDateColumn,
+  UpdateDateColumn,
 } from 'typeorm';
 import { ParameterToEventAssociation, DataValidator } from './';
 
@@ -59,4 +61,10 @@ export class EventParameter {
     name: 'event_parameter_measurement_unit',
   })
   measurementUnit!: string;
+
+  @CreateDateColumn({ type: 'timestamptz', nullable: false })
+  createdAt!: Date;
+
+  @UpdateDateColumn({ type: 'timestamptz', nullable: false })
+  updatedAt!: Date;
 }

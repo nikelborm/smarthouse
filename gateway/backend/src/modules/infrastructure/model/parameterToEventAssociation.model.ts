@@ -6,6 +6,8 @@ import {
   Index,
   Unique,
   JoinColumn,
+  CreateDateColumn,
+  UpdateDateColumn,
 } from 'typeorm';
 import { EventParameter, Event } from '.';
 
@@ -47,4 +49,10 @@ export class ParameterToEventAssociation {
     name: 'is_parameter_required_for_event',
   })
   isParameterRequired!: boolean;
+
+  @CreateDateColumn({ type: 'timestamptz', nullable: false })
+  createdAt!: Date;
+
+  @UpdateDateColumn({ type: 'timestamptz', nullable: false })
+  updatedAt!: Date;
 }

@@ -5,7 +5,7 @@ export class WithoutEncryptionService
   implements
     IEncryptionWorker<
       Record<string, never>,
-      Record<string, never>,
+      { password: string },
       Record<string, never>
     >
 {
@@ -21,7 +21,7 @@ export class WithoutEncryptionService
       clientSideHandshakeCredentials,
     );
     return {
-      credentialsToSendBackToClient: {},
+      credentialsToSendBackToClient: { password: 'test' },
       credentialsToStoreInDatabase: {},
     };
   }
