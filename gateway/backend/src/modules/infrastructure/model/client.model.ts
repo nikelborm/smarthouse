@@ -93,10 +93,17 @@ export class Client {
   @OneToMany(() => Endpoint, (endpoint) => endpoint.client)
   endpoints!: Endpoint[];
 
-  @CreateDateColumn({ type: 'timestamptz', nullable: false })
+  @CreateDateColumn({
+    type: 'timestamptz',
+    nullable: false,
+    name: 'client_created_at',
+  })
   createdAt!: Date;
 
-  @UpdateDateColumn({ type: 'timestamptz', nullable: false })
+  @UpdateDateColumn({
+    type: 'timestamptz',
+    name: 'client_updated_at',
+  })
   updatedAt!: Date;
   // TODO: configuration?????
 }

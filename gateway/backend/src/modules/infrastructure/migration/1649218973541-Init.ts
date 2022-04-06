@@ -1,15 +1,15 @@
 import { MigrationInterface, QueryRunner } from 'typeorm';
 
-export class Init1649216936188 implements MigrationInterface {
-  name = 'Init1649216936188';
+export class Init1649218973541 implements MigrationInterface {
+  name = 'Init1649218973541';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(`
       CREATE TABLE "data_validator" (
         "data_validator_uuid" uuid NOT NULL,
         "data_validator_name" character varying NOT NULL,
-        "createdAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
-        "updatedAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
+        "data_validator_created_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
+        "data_validator_updated_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
         CONSTRAINT "PK_09e69c49c12702f1dfc4a03412b" PRIMARY KEY ("data_validator_uuid")
       )
     `);
@@ -17,8 +17,8 @@ export class Init1649216936188 implements MigrationInterface {
       CREATE TABLE "encryption_worker" (
         "encryption_worker_uuid" uuid NOT NULL,
         "encryption_worker_name" character varying NOT NULL,
-        "createdAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
-        "updatedAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
+        "encryption_worker_created_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
+        "encryption_worker_updated_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
         CONSTRAINT "PK_c7453dcae1c2001eb83a6e7db18" PRIMARY KEY ("encryption_worker_uuid")
       )
     `);
@@ -38,8 +38,8 @@ export class Init1649216936188 implements MigrationInterface {
         "client_id" integer NOT NULL,
         "endpoint_type" "public"."endpoint_endpoint_type_enum" NOT NULL,
         "endpoint_hex_color" character(6) NOT NULL,
-        "createdAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
-        "updatedAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
+        "endpoint_created_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
+        "endpoint_updated_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
         CONSTRAINT "UQ_9a2de9047b18c06c18fb8c36a38" UNIQUE ("endpoint_uuid"),
         CONSTRAINT "UQ_81d3d5eb8cd31fc7ab912d5ee39" UNIQUE ("client_id", "endpoint_name"),
         CONSTRAINT "UQ_6d5348e37d3ff8b80e49f6e8804" UNIQUE ("client_id", "endpoint_shortcode"),
@@ -69,8 +69,8 @@ export class Init1649216936188 implements MigrationInterface {
         "event_description_alias" character varying,
         "event_type" "public"."event_event_type_enum" NOT NULL,
         "event_hex_color" character(6) NOT NULL,
-        "createdAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
-        "updatedAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
+        "event_created_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
+        "event_updated_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
         CONSTRAINT "UQ_b30b2ed258a19ed7368c92849fb" UNIQUE ("event_uuid"),
         CONSTRAINT "PK_fe0840e4557d98ed53b0ae51466" PRIMARY KEY ("event_id")
       )
@@ -83,8 +83,8 @@ export class Init1649216936188 implements MigrationInterface {
         "event_parameter_name_alias" character varying,
         "data_validator_uuid" uuid NOT NULL,
         "event_parameter_measurement_unit" character varying NOT NULL,
-        "createdAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
-        "updatedAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
+        "event_parameter_created_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
+        "event_parameter_updated_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
         CONSTRAINT "UQ_e05ff8b95a30bd41beadc2e6477" UNIQUE ("event_parameter_uuid"),
         CONSTRAINT "PK_89e853344fedede4a20c728d848" PRIMARY KEY ("event_parameter_id")
       )
@@ -95,8 +95,8 @@ export class Init1649216936188 implements MigrationInterface {
         "event_parameter_id" integer NOT NULL,
         "event_id" integer NOT NULL,
         "is_parameter_required_for_event" boolean NOT NULL,
-        "createdAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
-        "updatedAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
+        "parameter_to_event_association_created_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
+        "parameter_to_event_association_updated_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
         CONSTRAINT "UQ_6c12f8831d0c015d5870e01124a" UNIQUE ("event_parameter_id", "event_id"),
         CONSTRAINT "PK_d2090084e29bc889e27003858bf" PRIMARY KEY ("parameter_to_event_association_id")
       )
@@ -109,8 +109,8 @@ export class Init1649216936188 implements MigrationInterface {
         "route_id" SERIAL NOT NULL,
         "source_endpoint_id" integer NOT NULL,
         "sink_endpoint_id" integer NOT NULL,
-        "createdAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
-        "updatedAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
+        "route_created_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
+        "route_updated_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
         CONSTRAINT "UQ_44b30a9863e98f0e33a9b289f3d" UNIQUE ("source_endpoint_id", "sink_endpoint_id"),
         CONSTRAINT "PK_4e7fe1b2d0ef419d4ce018aa0b5" PRIMARY KEY ("route_id")
       )
@@ -131,8 +131,8 @@ export class Init1649216936188 implements MigrationInterface {
         "client_was_last_active_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT 'now()',
         "encryption_worker_uuid" uuid NOT NULL,
         "client_encryption_credentials" jsonb NOT NULL,
-        "createdAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
-        "updatedAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
+        "client_created_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
+        "client_updated_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
         CONSTRAINT "UQ_eda3a2175f92585f73102034683" UNIQUE ("client_uuid"),
         CONSTRAINT "PK_7510ce0a84bde51dbff978b4b49" PRIMARY KEY ("client_id")
       )

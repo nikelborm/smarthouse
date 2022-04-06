@@ -71,9 +71,16 @@ export class Event {
   })
   hexColor!: string;
 
-  @CreateDateColumn({ type: 'timestamptz', nullable: false })
+  @CreateDateColumn({
+    type: 'timestamptz',
+    nullable: false,
+    name: 'event_created_at',
+  })
   createdAt!: Date;
 
-  @UpdateDateColumn({ type: 'timestamptz', nullable: false })
+  @UpdateDateColumn({
+    type: 'timestamptz',
+    name: 'event_updated_at',
+  })
   updatedAt!: Date;
 }

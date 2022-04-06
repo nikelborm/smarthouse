@@ -26,9 +26,16 @@ export class EncryptionWorker {
   @OneToMany(() => Client, (client) => client.encryptionWorker)
   clients!: Client[];
 
-  @CreateDateColumn({ type: 'timestamptz', nullable: false })
+  @CreateDateColumn({
+    type: 'timestamptz',
+    nullable: false,
+    name: 'encryption_worker_created_at',
+  })
   createdAt!: Date;
 
-  @UpdateDateColumn({ type: 'timestamptz', nullable: false })
+  @UpdateDateColumn({
+    type: 'timestamptz',
+    name: 'encryption_worker_updated_at',
+  })
   updatedAt!: Date;
 }

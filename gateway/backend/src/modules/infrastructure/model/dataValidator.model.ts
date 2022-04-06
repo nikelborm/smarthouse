@@ -29,10 +29,17 @@ export class DataValidator {
   )
   eventParameters!: EventParameter[];
 
-  @CreateDateColumn({ type: 'timestamptz', nullable: false })
+  @CreateDateColumn({
+    type: 'timestamptz',
+    nullable: false,
+    name: 'data_validator_created_at',
+  })
   createdAt!: Date;
 
-  @UpdateDateColumn({ type: 'timestamptz', nullable: false })
+  @UpdateDateColumn({
+    type: 'timestamptz',
+    name: 'data_validator_updated_at',
+  })
   updatedAt!: Date;
 }
 

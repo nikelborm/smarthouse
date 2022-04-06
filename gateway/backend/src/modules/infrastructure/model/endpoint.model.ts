@@ -100,10 +100,17 @@ export class Endpoint {
   })
   hexColor!: string;
 
-  @CreateDateColumn({ type: 'timestamptz', nullable: false })
+  @CreateDateColumn({
+    type: 'timestamptz',
+    nullable: false,
+    name: 'endpoint_created_at',
+  })
   createdAt!: Date;
 
-  @UpdateDateColumn({ type: 'timestamptz', nullable: false })
+  @UpdateDateColumn({
+    type: 'timestamptz',
+    name: 'endpoint_updated_at',
+  })
   updatedAt!: Date;
   // configuration?????
 }

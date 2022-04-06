@@ -40,15 +40,15 @@ export class ClientInitialHandshakeUseCase {
       handshakeRequest.encryptionWorkerUUID,
     );
 
-    // eslint-disable-next-line prefer-const
-    let generatedEventParameters: { id: number; uuid: string }[];
+    const evenParametersUUIDs = handshakeRequest.supported.eventParameters.map(
+      ({ uuid }) => uuid,
+    );
 
     try {
-      ({ generatedMaps: generatedEventParameters } =
-        (await this.eventParameterRepo.insertInTransactionOnlyNewEventParameters(
-          handshakeRequest.supported.eventParameters,
-          transactionManager,
-        )) as any);
+      await this.eventParameterRepo.insertInTransactionOnlyNewEventParameters(
+        handshakeRequest.supported.eventParameters,
+        transactionManager,
+      );
     } catch (error) {
       throw new Error(
         'Some of your required data validators does not implemented',
@@ -82,18 +82,26 @@ export class ClientInitialHandshakeUseCase {
       eventsToInsert.push(event);
     }
 
-    const { generatedMaps: generatedEvents } =
-      (await this.eventRepo.insertInTransactionOnlyNewEvents(
-        eventsToInsert,
-        transactionManager,
-      )) as any as { generatedMaps: { id: number; uuid: string }[] };
+    const eventsToInsertUUIDs = eventsToInsert.map(({ uuid }) => uuid);
+
+    await this.eventRepo.insertInTransactionOnlyNewEvents(
+      eventsToInsert,
+      transactionManager,
+    );
 
     const indexedEvents = remapToIndexedObject(
-      generatedEvents,
+      await this.eventRepo.getInTransactionWithIdsBy(
+        eventsToInsertUUIDs,
+        transactionManager,
+      ),
       ({ uuid }) => uuid,
     );
+
     const indexedEventParameters = remapToIndexedObject(
-      generatedEventParameters,
+      await this.eventParameterRepo.getInTransactionWithIdsBy(
+        evenParametersUUIDs,
+        transactionManager,
+      ),
       ({ uuid }) => uuid,
     );
 
@@ -129,9 +137,16 @@ export class ClientInitialHandshakeUseCase {
         transactionManager,
       );
 
-    // await this.endpointRepo.createManyPlainInTransaction(
-
-    // );
+    await this.endpointRepo.createManyPlainInTransaction(
+      handshakeRequest.supported.routeEndpoints.map(
+        ({ eventUUID, ...rest }) => ({
+          ...rest,
+          clientId: registeredClientId,
+          eventId: indexedEvents[eventUUID].id,
+        }),
+      ),
+      transactionManager,
+    );
 
     return {
       registeredClientId: 123,
@@ -143,7 +158,7 @@ export class ClientInitialHandshakeUseCase {
         HTTPAdress: 'https://asd.ri',
         uuid: '234',
         WSAdress: 'ws://123.234.345.456/socket',
-        encryptionModuleCredentials: {}, //credentialsToSendBackToClient,
+        encryptionModuleCredentials: credentialsToSendBackToClient,
       },
     };
   }
