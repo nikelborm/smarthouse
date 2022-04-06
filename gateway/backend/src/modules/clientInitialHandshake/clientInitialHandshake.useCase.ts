@@ -189,6 +189,10 @@ export class ClientInitialHandshakeUseCase {
     this.areThereDuplicateUUIDs(eventParameters, 'event parameter');
     this.areThereDuplicateUUIDs(events, 'event');
     this.areThereDuplicateUUIDs(routeEndpoints, 'route endpoint');
+    // this.areThereDuplicateUUIDs(
+    //   [...routeEndpoints, ...events, ...eventParameters],
+    //   'su',
+    // );
 
     for (const { optionalParameterUUIDs, requiredParameterUUIDs } of events) {
       if (doesArraysIntersects(optionalParameterUUIDs, requiredParameterUUIDs))

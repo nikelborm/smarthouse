@@ -27,7 +27,7 @@ export class WebsocketService {
     this.authedClientOfflineCB =
       config.authedClientOfflineCB ||
       (async (client) => console.log(`Client ${client.uuid} disconnected`));
-    this.handleWSconnections();
+    this.handleConnections();
     this.startDeadSocketCleaning();
   }
 
@@ -88,7 +88,7 @@ export class WebsocketService {
     }
   }
 
-  private handleWSconnections() {
+  private handleConnections() {
     this.server.on('connection', (socket) => {
       socket.isAlive = true;
 
@@ -96,10 +96,19 @@ export class WebsocketService {
         socket.isAlive = true;
       });
 
-      socket.once('message', this.firstClientMessageHandler(socket));
+      socket.once('message', async (message) => {
+        try {
+          await this.firstAuthMesssageHandler(socket, message);
+        } catch (error: any) {
+          console.log('first client message handler error', error, message);
+          await this.sendInto(socket, { error: error.message });
+          socket.close(1000);
+        }
+      });
+
       socket.on('close', () => {
         // TODO: проверить вызывается ли этот метод если мы teminate`нули девайс
-        //? надо ли вызывать обработчик authorizedClientDisconnectedHandler в двух местах
+        // надо ли вызывать обработчик authorizedClientDisconnectedHandler в двух местах?
         this.authedClientOfflineCB(socket.client);
       });
     });
@@ -117,27 +126,34 @@ export class WebsocketService {
     });
   }
 
-  private firstClientMessageHandler =
-    (socket: WebSocketCustomClient) => async (message: RawData) => {
+  private async firstAuthMesssageHandler(
+    socket: WebSocketCustomClient,
+    message: RawData,
+  ) {
+    const parsedMessage = JSON.parse(message.toString());
+    console.log('firstAuthMesssageHandler parsedMessage: ', parsedMessage);
+
+    const authorizationResult = await this.authRequestCB(parsedMessage);
+
+    if (!authorizationResult.isAuthorized)
+      throw new Error('Authorization: Crypto worker denied auth');
+
+    socket.isAuthorized = true;
+    socket.client = authorizationResult.client;
+
+    socket.on('message', async (message: RawData) => {
       try {
-        const parsedMessage = JSON.parse(message.toString());
-
-        const authorizationResult = await this.authRequestCB(parsedMessage);
-        if (!authorizationResult.isAuthorized)
-          throw new Error('Authorization: Crypto worker denied auth');
-
-        socket.isAuthorized = true;
-        socket.client = authorizationResult.client;
-
-        socket.on('message', async (message: RawData) => {
-          await this.authedMessageCB(message, socket.client);
-        });
-      } catch (error) {
-        if (error instanceof Error)
-          await this.sendInto(socket, { error: error.message });
-        socket.close(1000);
+        await this.authedMessageCB(message, socket.client);
+      } catch (error: any) {
+        console.log(
+          `Authed message from client ${socket.client.uuid} error`,
+          error,
+          message,
+        );
+        await this.sendInto(socket, { error: error.message });
       }
-    };
+    });
+  }
 
   private startDeadSocketCleaning() {
     this.deadSocketsCleanerInterval = setInterval(() => {

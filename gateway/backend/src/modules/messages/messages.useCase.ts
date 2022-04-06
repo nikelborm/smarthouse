@@ -39,6 +39,7 @@ export class MessagesUseCase {
 
   private authRequestCB: AuthRequestCB = async (message) => {
     const validationErrors = validate(message, AuthMessage);
+    console.log('message: ', message);
     if (validationErrors.length)
       throw new Error('Authorization: validation error');
 
@@ -47,7 +48,7 @@ export class MessagesUseCase {
     );
 
     const worker = this.encryptionUseCase.getEncryptionWorker(
-      client.encryptionWorker.uuid,
+      client.encryptionWorkerUUID,
     );
 
     const isCredentialsValid = await worker.isAuthRequestFromClientValid(
@@ -66,82 +67,80 @@ export class MessagesUseCase {
   };
 
   private authedMessageCB: AuthedMessageCB = async (message, client) => {
-    try {
-      const worker = this.encryptionUseCase.getEncryptionWorker(
-        client.encryptionWorker.uuid,
-      );
+    const worker = this.encryptionUseCase.getEncryptionWorker(
+      client.encryptionWorkerUUID,
+    );
 
-      const jsonString = await worker.decryptEncryptedJsonStringSentFromClient(
-        client.encryptionWorkerCredentials,
-        message.toString(),
-      );
+    const jsonString = await worker.decryptEncryptedJsonStringSentFromClient(
+      client.encryptionWorkerCredentials,
+      message.toString(),
+    );
 
-      const parsedMessage: DecryptedRegularMessage = JSON.parse(jsonString);
+    const parsedMessage: DecryptedRegularMessage = JSON.parse(jsonString);
+    console.log('authedMessageCB parsedMessage: ', parsedMessage);
 
-      const validationErrors = validate(parsedMessage, DecryptedRegularMessage);
-      if (validationErrors.length)
-        throw new Error('Message from authorized client: Validation error');
+    const validationErrors = validate(parsedMessage, DecryptedRegularMessage);
+    if (validationErrors.length)
+      throw new Error('Message from authorized client: Validation error');
 
-      const endpoint = client.endpoints.find(
-        ({ uuid }) => parsedMessage.endpointUUID === uuid,
-      );
+    const endpoint = client.endpoints.find(
+      ({ uuid }) => parsedMessage.endpointUUID === uuid,
+    );
 
-      this.validateMessage(endpoint, parsedMessage);
+    this.validateMessage(endpoint, parsedMessage);
 
-      // if this.messageWithGatewayAsRecipientHandler.subscribed ForEndpoints
-      const dataConsumerEndpoints = await this.routeRepo.getManyRoutesBySource(
-        endpoint.id,
-      );
+    // if this.messageWithGatewayAsRecipientHandler.subscribed ForEndpoints
+    const dataConsumerEndpoints = await this.routeRepo.getManyRoutesBySource(
+      endpoint.id,
+    );
+    console.log('dataConsumerEndpoints: ', dataConsumerEndpoints);
+    console.log(7);
+    const dataConsumerClientIds = new Set(
+      dataConsumerEndpoints.map(({ sinkEndpoint: { clientId } }) => clientId),
+    );
+    console.log(8);
+    const dataConsumerEndpointUUIDs = new Set(
+      dataConsumerEndpoints.map(({ sinkEndpoint: { uuid } }) => uuid),
+    );
+    console.log(9);
+    this.wsservice.sendToManyClientsBy(
+      ({ id }) => dataConsumerClientIds.has(id),
+      async (client) => {
+        const encryptedMessages: string[] = [];
+        for (const { uuid: endpointUUID } of client.endpoints) {
+          if (!dataConsumerEndpointUUIDs.has(endpointUUID)) continue;
 
-      const dataConsumerClientIds = new Set(
-        dataConsumerEndpoints.map(({ sinkEndpoint: { clientId } }) => clientId),
-      );
+          const message: DecryptedRegularMessage = {
+            endpointUUID,
+            messageUUID: parsedMessage.messageUUID,
+            parameters: parsedMessage.parameters,
+          };
 
-      const dataConsumerEndpointUUIDs = new Set(
-        dataConsumerEndpoints.map(({ sinkEndpoint: { uuid } }) => uuid),
-      );
+          // TODO: сюда кажется надо добавить как раз ту хуйню с сериализацией параметров
+          // а может и не надо потому что мы по факту отправляем то что приняли и оно уже
+          // по сути сериализовано, если пихнули в сообщение
+          const encryptedMessage = await this.encryptionUseCase
+            .getEncryptionWorker(client.encryptionWorkerUUID)
+            .encryptJsonStringToSendToClient(
+              client.encryptionWorkerCredentials,
+              JSON.stringify(message),
+            );
 
-      this.wsservice.sendToManyClientsBy(
-        ({ id }) => dataConsumerClientIds.has(id),
-        async (client) => {
-          const encryptedMessages: string[] = [];
-          for (const { uuid: endpointUUID } of client.endpoints) {
-            if (!dataConsumerEndpointUUIDs.has(endpointUUID)) continue;
+          encryptedMessages.push(encryptedMessage);
+        }
+        return encryptedMessages;
+      },
+    );
 
-            const message: DecryptedRegularMessage = {
-              endpointUUID,
-              messageUUID: parsedMessage.messageUUID,
-              parameters: parsedMessage.parameters,
-            };
-
-            // TODO: сюда кажется надо добавить как раз ту хуйню с сериализацией параметров
-            // а может и не надо потому что мы по факту отправляем то что приняли и оно уже
-            // по сути сериализовано, если пихнули в сообщение
-            const encryptedMessage = await this.encryptionUseCase
-              .getEncryptionWorker(client.encryptionWorker.uuid)
-              .encryptJsonStringToSendToClient(
-                client.encryptionWorkerCredentials,
-                JSON.stringify(message),
-              );
-
-            encryptedMessages.push(encryptedMessage);
-          }
-          return encryptedMessages;
-        },
-      );
-
-      console.log(
-        '🚀 ~ file: messages.useCase.ts ~ line 90 ~ MessagesUseCase ~ authedMessageCB:AuthedMessageCB= ~ dataConsumerEndpoints',
-        dataConsumerEndpoints,
-      );
-      // this.wsservice.sendToManyClientsBy()
-    } catch (error) {
-      console.log(`authRequestCB ~ ${client.uuid} ~ error`, error);
-    }
+    console.log(
+      '🚀 ~ file: messages.useCase.ts ~ line 90 ~ MessagesUseCase ~ authedMessageCB:AuthedMessageCB= ~ dataConsumerEndpoints',
+      dataConsumerEndpoints,
+    );
+    // this.wsservice.sendToManyClientsBy()
   };
 
   private authedClientOfflineCB: OnlineStatusChangedCB = async () => {
-    console.log();
+    console.log('asd');
   };
 
   private validateMessage(
@@ -175,10 +174,6 @@ export class MessagesUseCase {
       ({ eventParameter: { uuid } }) => uuid,
     );
 
-    const allMessageParametersUUIDs = parsedMessage.parameters.map(
-      ({ uuid }) => uuid,
-    );
-
     if (
       !parsedMessage?.parameters?.length &&
       requiredEventParametersUUIDs.length
@@ -186,6 +181,10 @@ export class MessagesUseCase {
       throw new Error('Some required parameters are not specified');
 
     if (!parsedMessage?.parameters?.length) return;
+
+    const allMessageParametersUUIDs = parsedMessage.parameters.map(
+      ({ uuid }) => uuid,
+    );
 
     const messageParametersUUIDsWithoutDuplicates = new Set(
       allMessageParametersUUIDs,
