@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { differenceBetweenSetsInArray } from 'src/tools';
 import {
   AuthMessage,
@@ -7,6 +8,7 @@ import {
   EventType,
   validate,
 } from 'src/types';
+import { EventEmitter } from 'stream';
 import { DataValidatorUseCase } from '../dataValidator';
 import { EncryptionUseCase } from '../encryption';
 import { model, repo } from '../infrastructure';
@@ -23,18 +25,19 @@ export class MessagesUseCase {
   constructor(
     private readonly clientRepo: repo.ClientRepo,
     private readonly routeRepo: repo.RouteRepo,
+    private readonly configService: ConfigService,
     private readonly dataValidatorUseCase: DataValidatorUseCase,
     private readonly encryptionUseCase: EncryptionUseCase,
   ) {
     this.wsservice = new WebsocketService({
-      port: 4999,
+      port: this.configService.get('webSocketServerPort'),
       authRequestCB: this.authRequestCB,
       authedMessageCB: this.authedMessageCB,
       authedClientOfflineCB: this.authedClientOfflineCB,
     });
   }
 
-  authRequestCB: AuthRequestCB = async (message) => {
+  private authRequestCB: AuthRequestCB = async (message) => {
     const validationErrors = validate(message, AuthMessage);
     if (validationErrors.length)
       throw new Error('Authorization: validation error');
@@ -62,7 +65,7 @@ export class MessagesUseCase {
         };
   };
 
-  authedMessageCB: AuthedMessageCB = async (message, client) => {
+  private authedMessageCB: AuthedMessageCB = async (message, client) => {
     try {
       const worker = this.encryptionUseCase.getEncryptionWorker(
         client.encryptionWorker.uuid,
@@ -83,8 +86,9 @@ export class MessagesUseCase {
         ({ uuid }) => parsedMessage.endpointUUID === uuid,
       );
 
-      this.productValidations(endpoint, parsedMessage);
+      this.validateMessage(endpoint, parsedMessage);
 
+      // if this.messageWithGatewayAsRecipientHandler.subscribed ForEndpoints
       const dataConsumerEndpoints = await this.routeRepo.getManyRoutesBySource(
         endpoint.id,
       );
@@ -136,11 +140,11 @@ export class MessagesUseCase {
     }
   };
 
-  authedClientOfflineCB: OnlineStatusChangedCB = async () => {
+  private authedClientOfflineCB: OnlineStatusChangedCB = async () => {
     console.log();
   };
 
-  private productValidations(
+  private validateMessage(
     endpoint: model.Endpoint,
     parsedMessage: DecryptedRegularMessage,
   ) {
@@ -175,58 +179,62 @@ export class MessagesUseCase {
       ({ uuid }) => uuid,
     );
 
-    if (parsedMessage?.parameters?.length) {
-      const messageParametersUUIDsWithoutDuplicates = new Set(
-        allMessageParametersUUIDs,
+    if (
+      !parsedMessage?.parameters?.length &&
+      requiredEventParametersUUIDs.length
+    )
+      throw new Error('Some required parameters are not specified');
+
+    if (!parsedMessage?.parameters?.length) return;
+
+    const messageParametersUUIDsWithoutDuplicates = new Set(
+      allMessageParametersUUIDs,
+    );
+
+    if (
+      messageParametersUUIDsWithoutDuplicates.size <
+      allMessageParametersUUIDs.length
+    )
+      throw new Error(`Message contains duplicate parameters`);
+
+    const redundantParametersUUIDs = differenceBetweenSetsInArray(
+      messageParametersUUIDsWithoutDuplicates,
+      new Set(allEventParametersUUIDs),
+    );
+
+    if (redundantParametersUUIDs.length > 0)
+      throw new Error(
+        `Found message parameters that should NOT be sent ${redundantParametersUUIDs}`,
       );
 
-      if (
-        messageParametersUUIDsWithoutDuplicates.size <
-        allMessageParametersUUIDs.length
-      )
-        throw new Error(`Message contains duplicate parameters`);
+    const notSentParametersUUIDs = differenceBetweenSetsInArray(
+      new Set(requiredEventParametersUUIDs),
+      messageParametersUUIDsWithoutDuplicates,
+    );
 
-      const redundantParametersUUIDs = differenceBetweenSetsInArray(
-        messageParametersUUIDsWithoutDuplicates,
-        new Set(allEventParametersUUIDs),
+    if (notSentParametersUUIDs.length > 0)
+      throw new Error(
+        `Found message parameters that should be sent ${notSentParametersUUIDs}`,
       );
 
-      if (redundantParametersUUIDs.length > 0)
-        throw new Error(
-          `Found message parameters that should NOT be sent ${redundantParametersUUIDs}`,
-        );
+    const paramToValidator = Object.fromEntries(
+      parameterAssociations.map(
+        ({
+          eventParameter: {
+            uuid: parameterUUID,
+            dataValidator: { uuid: validatorUUID },
+          },
+        }) => [parameterUUID, validatorUUID],
+      ),
+    );
 
-      const notSentParametersUUIDs = differenceBetweenSetsInArray(
-        new Set(requiredEventParametersUUIDs),
-        messageParametersUUIDsWithoutDuplicates,
-      );
-
-      if (notSentParametersUUIDs.length > 0)
-        throw new Error(
-          `Found message parameters that should be sent ${notSentParametersUUIDs}`,
-        );
-
-      const paramToValidator = Object.fromEntries(
-        parameterAssociations.map(
-          ({
-            eventParameter: {
-              uuid: parameterUUID,
-              dataValidator: { uuid: validatorUUID },
-            },
-          }) => [parameterUUID, validatorUUID],
-        ),
-      );
-
-      for (const messageParam of parsedMessage.parameters) {
-        const doesValueMatchItsType = this.dataValidatorUseCase
-          .getValidator(paramToValidator[messageParam.uuid])
-          .verify(messageParam.value);
-
-        if (!doesValueMatchItsType) throw new Error('Incorrect value format');
-      }
-    } else {
-      if (requiredEventParametersUUIDs.length)
-        throw new Error('Some required parameters are not specified');
+    for (const messageParam of parsedMessage.parameters) {
+      const doesValueMatchItsType = this.dataValidatorUseCase
+        .getValidator(paramToValidator[messageParam.uuid])
+        .verify(messageParam.value);
+      if (!doesValueMatchItsType) throw new Error('Incorrect value format');
     }
   }
 }
+
+class MessageWithGatewayAsRecipientEmitter extends EventEmitter {}
