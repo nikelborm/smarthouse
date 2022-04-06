@@ -2,7 +2,7 @@ import { isString } from 'class-validator';
 import { IDataValidator } from '../IDataValidator';
 
 export class StringDataValidator implements IDataValidator<string> {
-  readonly uuid = 'ca4e23ec-f2a4-4d78-aa94-2065d72d5824';
+  readonly uuid = 'd3718ec1-6a79-4a3c-a7c4-77e7d55acf94';
 
   readonly name = 'String validator';
 

@@ -51,6 +51,8 @@ export const EncryptionModuleInitializer = {
           uuid,
         })),
       );
+
+    return workersStore;
   },
   inject: [repo.EncryptionWorkerRepo],
 };

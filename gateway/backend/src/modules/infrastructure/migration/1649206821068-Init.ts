@@ -1,24 +1,14 @@
 import { MigrationInterface, QueryRunner } from 'typeorm';
 
-export class Init1649202407516 implements MigrationInterface {
-  name = 'Init1649202407516';
+export class Init1649206821068 implements MigrationInterface {
+  name = 'Init1649206821068';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(`
-      CREATE TABLE "client" (
-        "client_id" SERIAL NOT NULL,
-        "client_uuid" uuid NOT NULL,
-        "client_shortname" character varying NOT NULL,
-        "client_shortname_alias" character varying,
-        "client_fullname" character varying NOT NULL,
-        "client_fullname_alias" character varying,
-        "client_description" character varying NOT NULL,
-        "client_description_alias" character varying,
-        "client_was_last_active_at" TIMESTAMP WITH TIME ZONE NOT NULL,
-        "encryption_worker_uuid" uuid NOT NULL,
-        "client_encryption_credentials" jsonb NOT NULL,
-        CONSTRAINT "UQ_eda3a2175f92585f73102034683" UNIQUE ("client_uuid"),
-        CONSTRAINT "PK_7510ce0a84bde51dbff978b4b49" PRIMARY KEY ("client_id")
+      CREATE TABLE "data_validator" (
+        "data_validator_uuid" uuid NOT NULL,
+        "data_validator_name" character varying NOT NULL,
+        CONSTRAINT "PK_09e69c49c12702f1dfc4a03412b" PRIMARY KEY ("data_validator_uuid")
       )
     `);
     await queryRunner.query(`
@@ -45,6 +35,18 @@ export class Init1649202407516 implements MigrationInterface {
         "endpoint_type" "public"."endpoint_endpoint_type_enum" NOT NULL,
         "endpoint_hex_color" character(6) NOT NULL,
         CONSTRAINT "UQ_9a2de9047b18c06c18fb8c36a38" UNIQUE ("endpoint_uuid"),
+        CONSTRAINT "UQ_81d3d5eb8cd31fc7ab912d5ee39" UNIQUE ("client_id", "endpoint_name"),
+        CONSTRAINT "UQ_6d5348e37d3ff8b80e49f6e8804" UNIQUE ("client_id", "endpoint_shortcode"),
+        CONSTRAINT "CHK_ad7e53cbb2b4c4de3f376fd908" CHECK (
+          (
+            endpoint_type <> 'universalSink'
+            AND event_id is not null
+          )
+          OR (
+            endpoint_type = 'universalSink'
+            AND event_id is null
+          )
+        ),
         CONSTRAINT "PK_b2b02791966766a03a316b583d9" PRIMARY KEY ("endpoint_id")
       )
     `);
@@ -103,15 +105,21 @@ export class Init1649202407516 implements MigrationInterface {
       CREATE UNIQUE INDEX "IDX_44b30a9863e98f0e33a9b289f3" ON "route" ("source_endpoint_id", "sink_endpoint_id")
     `);
     await queryRunner.query(`
-      CREATE TABLE "data_validator" (
-        "data_validator_uuid" uuid NOT NULL,
-        "data_validator_name" character varying NOT NULL,
-        CONSTRAINT "PK_09e69c49c12702f1dfc4a03412b" PRIMARY KEY ("data_validator_uuid")
+      CREATE TABLE "client" (
+        "client_id" SERIAL NOT NULL,
+        "client_uuid" uuid NOT NULL,
+        "client_shortname" character varying NOT NULL,
+        "client_shortname_alias" character varying,
+        "client_fullname" character varying NOT NULL,
+        "client_fullname_alias" character varying,
+        "client_description" character varying NOT NULL,
+        "client_description_alias" character varying,
+        "client_was_last_active_at" TIMESTAMP WITH TIME ZONE NOT NULL,
+        "encryption_worker_uuid" uuid NOT NULL,
+        "client_encryption_credentials" jsonb NOT NULL,
+        CONSTRAINT "UQ_eda3a2175f92585f73102034683" UNIQUE ("client_uuid"),
+        CONSTRAINT "PK_7510ce0a84bde51dbff978b4b49" PRIMARY KEY ("client_id")
       )
-    `);
-    await queryRunner.query(`
-      ALTER TABLE "client"
-      ADD CONSTRAINT "FK_0f2df082753da875222377fe9bb" FOREIGN KEY ("encryption_worker_uuid") REFERENCES "encryption_worker"("encryption_worker_uuid") ON DELETE NO ACTION ON UPDATE NO ACTION
     `);
     await queryRunner.query(`
       ALTER TABLE "endpoint"
@@ -141,9 +149,16 @@ export class Init1649202407516 implements MigrationInterface {
       ALTER TABLE "route"
       ADD CONSTRAINT "FK_8b945c4222359498a187243367b" FOREIGN KEY ("sink_endpoint_id") REFERENCES "endpoint"("endpoint_id") ON DELETE NO ACTION ON UPDATE NO ACTION
     `);
+    await queryRunner.query(`
+      ALTER TABLE "client"
+      ADD CONSTRAINT "FK_0f2df082753da875222377fe9bb" FOREIGN KEY ("encryption_worker_uuid") REFERENCES "encryption_worker"("encryption_worker_uuid") ON DELETE NO ACTION ON UPDATE NO ACTION
+    `);
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
+    await queryRunner.query(`
+      ALTER TABLE "client" DROP CONSTRAINT "FK_0f2df082753da875222377fe9bb"
+    `);
     await queryRunner.query(`
       ALTER TABLE "route" DROP CONSTRAINT "FK_8b945c4222359498a187243367b"
     `);
@@ -166,10 +181,7 @@ export class Init1649202407516 implements MigrationInterface {
       ALTER TABLE "endpoint" DROP CONSTRAINT "FK_d7eaf082061e16e933604d7bb97"
     `);
     await queryRunner.query(`
-      ALTER TABLE "client" DROP CONSTRAINT "FK_0f2df082753da875222377fe9bb"
-    `);
-    await queryRunner.query(`
-      DROP TABLE "data_validator"
+      DROP TABLE "client"
     `);
     await queryRunner.query(`
       DROP INDEX "public"."IDX_44b30a9863e98f0e33a9b289f3"
@@ -202,7 +214,7 @@ export class Init1649202407516 implements MigrationInterface {
       DROP TABLE "encryption_worker"
     `);
     await queryRunner.query(`
-      DROP TABLE "client"
+      DROP TABLE "data_validator"
     `);
   }
 }

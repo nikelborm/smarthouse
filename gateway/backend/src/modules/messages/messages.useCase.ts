@@ -47,7 +47,7 @@ export class MessagesUseCase {
       client.encryptionWorker.uuid,
     );
 
-    const isCredentialsValid = worker.isAuthRequestFromClientValid(
+    const isCredentialsValid = await worker.isAuthRequestFromClientValid(
       client.encryptionWorkerCredentials,
       message,
     );

@@ -15,7 +15,7 @@ import { Client, Event, Route } from './';
 @Unique(['clientId', 'shortcode'])
 @Unique(['clientId', 'name'])
 @Check(
-  `(type <> 'universalSink' AND "eventId" is not null) OR (type = 'universalSink' AND "eventId" is null)`,
+  `(endpoint_type <> 'universalSink' AND event_id is not null) OR (endpoint_type = 'universalSink' AND event_id is null)`,
 )
 export class Endpoint {
   @PrimaryGeneratedColumn({ name: 'endpoint_id' })

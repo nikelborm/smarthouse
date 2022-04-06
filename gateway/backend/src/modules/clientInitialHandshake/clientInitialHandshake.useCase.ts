@@ -1,8 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { InitHandshakeQuery, InitHandshakeResponse } from 'src/types';
-import { EntityManager } from 'typeorm';
+import { DeepPartial, EntityManager } from 'typeorm';
 import { InjectEntityManager } from '@nestjs/typeorm';
-import { repo } from '../infrastructure';
+import { model, repo } from '../infrastructure';
 import { EncryptionUseCase } from '../encryption';
 import { differenceBetweenSetsInArray, doesArraysIntersects } from 'src/tools';
 import { IEncryptionWorker } from '../encryption/IEncryptionWorker';
@@ -21,7 +21,7 @@ export class ClientInitialHandshakeUseCase {
   ) {}
 
   async init(handshakeRequest: InitHandshakeQuery) {
-    return new Promise((resolve, reject) => {
+    return new Promise<InitHandshakeResponse>((resolve, reject) => {
       this.entityManager.transaction(async (transactionManager) => {
         try {
           resolve(
@@ -38,15 +38,44 @@ export class ClientInitialHandshakeUseCase {
     transactionManager: EntityManager,
     handshakeRequest: InitHandshakeQuery,
   ): Promise<InitHandshakeResponse> {
-    console.log('transactionManager: ', transactionManager);
-    console.log('handshakeRequest: ', handshakeRequest);
+    this.validateHandshakeRequest(handshakeRequest);
 
     const encryptionWorker = this.encryptionUseCase.getEncryptionWorker(
       handshakeRequest.encryptionWorkerUUID,
     );
 
-    await this.eventParameterRepo.insertInTransactionOnlyNewEventParameters(
-      handshakeRequest.supported.eventParameters,
+    const asd =
+      await this.eventParameterRepo.insertInTransactionOnlyNewEventParameters(
+        handshakeRequest.supported.eventParameters,
+        transactionManager,
+      );
+    console.log('asd: ', asd);
+
+    const eventToParameterAssociationsToInsert = [];
+    const eventsToInsert: Partial<model.Event>[] = [];
+
+    for (const {
+      optionalParameterUUIDs,
+      requiredParameterUUIDs,
+      ...event
+    } of handshakeRequest.supported.events) {
+      eventToParameterAssociationsToInsert.push(
+        ...optionalParameterUUIDs.map((uuid) => ({
+          eventParameterUUID: uuid,
+          eventUUID: event.uuid,
+          isParameterRequired: false,
+        })),
+        ...requiredParameterUUIDs.map((uuid) => ({
+          eventParameterUUID: uuid,
+          eventUUID: event.uuid,
+          isParameterRequired: true,
+        })),
+      );
+      eventsToInsert.push(event);
+    }
+
+    await this.eventRepo.insertInTransactionOnlyNewEvents(
+      eventsToInsert,
       transactionManager,
     );
 
@@ -88,19 +117,18 @@ export class ClientInitialHandshakeUseCase {
     };
   }
 
-  async validateHandshakeRequest(
-    transactionManager: EntityManager,
-    {
-      supported: { eventParameters, events, routeEndpoints, transport },
-      encryptionWorkerCredentials,
-      ...restHandshake
-    }: InitHandshakeQuery,
-    encryptionWorker: IEncryptionWorker<any, any, any>,
-  ) {
+  private async validateHandshakeRequest({
+    supported: { eventParameters, events, routeEndpoints, transport },
+    encryptionWorkerCredentials,
+    encryptionWorkerUUID,
+  }: InitHandshakeQuery) {
+    const encryptionWorker =
+      this.encryptionUseCase.getEncryptionWorker(encryptionWorkerUUID);
+
     if (
-      !encryptionWorker.isClientSideHandshakeCredentialsValid(
+      !(await encryptionWorker.isClientSideHandshakeCredentialsValid(
         encryptionWorkerCredentials,
-      )
+      ))
     )
       throw new Error('You have sent bad credentials');
 
@@ -114,6 +142,7 @@ export class ClientInitialHandshakeUseCase {
           'Some of your events have one parameter in both required and optional parameters',
         );
     }
+
     const parameterUUIDsRequestedByEvents = new Set(
       events.flatMap((event) => [
         ...event.optionalParameterUUIDs,
@@ -123,13 +152,38 @@ export class ClientInitialHandshakeUseCase {
 
     const grantedParameterUUIDs = eventParameters.map(({ uuid }) => uuid);
 
-    const unknownParameterUUIDsRequestedByEvents = differenceBetweenSetsInArray(
-      new Set(grantedParameterUUIDs),
-      parameterUUIDsRequestedByEvents,
+    const unknownParametersUUIDsRequestedByEvents =
+      differenceBetweenSetsInArray(
+        parameterUUIDsRequestedByEvents,
+        new Set(grantedParameterUUIDs),
+      );
+
+    if (unknownParametersUUIDsRequestedByEvents.length)
+      throw new Error(
+        'Some events mentions parameters that does not exists in your supported parameters list',
+      );
+
+    const eventUUIDsRequestedByEndpoints = new Set(
+      routeEndpoints.map(({ eventUUID }) => eventUUID),
     );
+
+    const grantedEventUUIDs = events.map(({ uuid }) => uuid);
+
+    const unknownEventsUUIDsRequestedByEndpoints = differenceBetweenSetsInArray(
+      eventUUIDsRequestedByEndpoints,
+      new Set(grantedEventUUIDs),
+    );
+
+    if (unknownEventsUUIDsRequestedByEndpoints.length)
+      throw new Error(
+        'Some events mentions parameters that does not exists in your supported parameters list',
+      );
+
+    if (!transport.http && !transport.wss)
+      throw new Error('You need to support at least 1 transport');
   }
 
-  areThereDuplicateUUIDs<T extends { uuid: string }>(
+  private areThereDuplicateUUIDs<T extends { uuid: string }>(
     entities: T[],
     entityName: string,
   ) {
