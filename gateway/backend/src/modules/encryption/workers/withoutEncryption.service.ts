@@ -57,6 +57,6 @@ export class WithoutEncryptionService
     credentialsFromDatabase: Record<string, never>,
     authRequestMessage: Record<string, any>,
   ) {
-    if (authRequestMessage.password === 'test') return true;
+    if (authRequestMessage.credentials.password === 'test') return true;
   }
 }

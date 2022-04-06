@@ -36,17 +36,11 @@ export class ClientRepo {
   }
 
   async getOneWithInfoAboutSupportedStuffBy(uuid: string) {
-    console.log(
-      '🚀 ~ file: client.repo.ts ~ line 87 ~ ClientRepo ~ getOneWithInfoAboutSupportedStuffBy ~ client',
-      uuid,
-    );
     const client = await this.repo.findOne({
       where: { uuid },
       select: {
         id: true,
-        encryptionWorker: {
-          uuid: true,
-        },
+        encryptionWorkerUUID: true,
         endpoints: {
           id: true,
           uuid: true,
@@ -59,9 +53,7 @@ export class ClientRepo {
               eventParameter: {
                 id: true,
                 uuid: true,
-                dataValidator: {
-                  uuid: true,
-                },
+                dataValidatorUUID: true,
               },
               isParameterRequired: true,
             },
@@ -69,13 +61,10 @@ export class ClientRepo {
         },
       },
       relations: {
-        encryptionWorker: true,
         endpoints: {
           event: {
             parameterAssociations: {
-              eventParameter: {
-                dataValidator: true,
-              },
+              eventParameter: true,
             },
           },
         },
@@ -86,6 +75,7 @@ export class ClientRepo {
         messages.repo.common.cantGetNotFoundByUUID('client', uuid),
       );
     client.uuid = uuid;
+    console.log(client);
     return client;
   }
 
