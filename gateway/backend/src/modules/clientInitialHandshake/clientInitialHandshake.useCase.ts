@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { InitHandshakeQuery, InitHandshakeResponse } from 'src/types';
+import { InitHandshakeQuery, InitHandshakeResponse, validate } from 'src/types';
 import { DeepPartial, EntityManager } from 'typeorm';
 import { InjectEntityManager } from '@nestjs/typeorm';
 import { model, repo } from '../infrastructure';
@@ -38,7 +38,7 @@ export class ClientInitialHandshakeUseCase {
     transactionManager: EntityManager,
     handshakeRequest: InitHandshakeQuery,
   ): Promise<InitHandshakeResponse> {
-    this.validateHandshakeRequest(handshakeRequest);
+    await this.validateHandshakeRequest(handshakeRequest);
 
     const encryptionWorker = this.encryptionUseCase.getEncryptionWorker(
       handshakeRequest.encryptionWorkerUUID,
@@ -117,11 +117,20 @@ export class ClientInitialHandshakeUseCase {
     };
   }
 
-  private async validateHandshakeRequest({
-    supported: { eventParameters, events, routeEndpoints, transport },
-    encryptionWorkerCredentials,
-    encryptionWorkerUUID,
-  }: InitHandshakeQuery) {
+  private async validateHandshakeRequest(
+    initHandshakeQuery: InitHandshakeQuery,
+  ) {
+    const {
+      supported: { eventParameters, events, routeEndpoints, transport },
+      encryptionWorkerCredentials,
+      encryptionWorkerUUID,
+    } = initHandshakeQuery;
+
+    const validationErrors = validate(initHandshakeQuery, InitHandshakeQuery);
+    console.log('validationErrors: ', validationErrors);
+    if (validationErrors.length)
+      throw new Error('InitHandshakeQuery: validation error');
+
     const encryptionWorker =
       this.encryptionUseCase.getEncryptionWorker(encryptionWorkerUUID);
 
