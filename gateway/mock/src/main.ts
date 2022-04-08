@@ -1,6 +1,6 @@
 import { NestFactory } from '@nestjs/core';
 import { ConfigService } from '@nestjs/config';
-import { AppModule } from './app.module';
+import { AppModule } from './mock.module';
 import 'reflect-metadata';
 import { MockDataUseCase } from './mockData.useCase';
 import { logConfig } from 'src/tools';

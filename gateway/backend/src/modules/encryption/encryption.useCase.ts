@@ -11,6 +11,7 @@ export class EncryptionUseCase {
     initialStore: EncryptionWorkerStoreFormat,
   ) {
     this.store = initialStore;
+    console.log('EncryptionUseCase initialStore: ', initialStore);
   }
 
   getEncryptionWorker(uuid: string) {

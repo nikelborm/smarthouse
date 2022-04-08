@@ -39,7 +39,7 @@ export class MessagesUseCase {
 
   private authRequestCB: AuthRequestCB = async (message) => {
     const validationErrors = validate(message, AuthMessage);
-    console.log('message: ', message);
+    console.log('authRequestCB message: ', message);
     if (validationErrors.length)
       throw new Error('Authorization: validation error');
 
@@ -89,20 +89,18 @@ export class MessagesUseCase {
 
     this.validateMessage(endpoint, parsedMessage);
 
-    // if this.messageWithGatewayAsRecipientHandler.subscribed ForEndpoints
     const dataConsumerEndpoints = await this.routeRepo.getManyRoutesBySource(
       endpoint.id,
     );
-    console.log('dataConsumerEndpoints: ', dataConsumerEndpoints);
-    console.log(7);
+
     const dataConsumerClientIds = new Set(
       dataConsumerEndpoints.map(({ sinkEndpoint: { clientId } }) => clientId),
     );
-    console.log(8);
+
     const dataConsumerEndpointUUIDs = new Set(
       dataConsumerEndpoints.map(({ sinkEndpoint: { uuid } }) => uuid),
     );
-    console.log(9);
+
     this.wsservice.sendToManyClientsBy(
       ({ id }) => dataConsumerClientIds.has(id),
       async (client) => {
@@ -132,15 +130,11 @@ export class MessagesUseCase {
       },
     );
 
-    console.log(
-      '🚀 ~ file: messages.useCase.ts ~ line 90 ~ MessagesUseCase ~ authedMessageCB:AuthedMessageCB= ~ dataConsumerEndpoints',
-      dataConsumerEndpoints,
-    );
     // this.wsservice.sendToManyClientsBy()
   };
 
   private authedClientOfflineCB: OnlineStatusChangedCB = async () => {
-    console.log('asd');
+    console.log('MessagesUseCase authedClientOfflineCB');
   };
 
   private validateMessage(
