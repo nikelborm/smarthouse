@@ -11,6 +11,7 @@ export function AdminPanelWrapper() {
   const [isMenuCollapsed, setCollapsedMenu] = useState(false);
 
   const { deepestPathPart, pathParts } = usePath();
+  console.log('{ deepestPathPart, pathParts }: ', { deepestPathPart, pathParts });
   if (deepestPathPart === 'adminPanel') return <Navigate to="profile" />;
 
   return (
