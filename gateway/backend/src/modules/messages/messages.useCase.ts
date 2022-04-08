@@ -25,6 +25,11 @@ import {
 @Injectable()
 export class MessagesUseCase {
   private readonly wsservice: WebsocketService;
+  private readonly messagesWaitingForResponseStore = new Map<
+    string, // `${messageUUID}${sinkEndpointUUID}`
+    { sourceEndpointUUID: string }
+  >();
+
   constructor(
     private readonly clientRepo: repo.ClientRepo,
     private readonly routeRepo: repo.RouteRepo,
@@ -58,7 +63,7 @@ export class MessagesUseCase {
       client: model.Client,
     ) => Promise<string[]>,
   ) {
-    return this.wsservice.sendToManyClientsBy(
+    return this.wsservice.sendToClientsBy(
       UUIDsOrPredicate,
       getEncryptedMessagesForMatchedClient,
     );
@@ -68,8 +73,95 @@ export class MessagesUseCase {
     return this.wsservice.getOnlineClientUUIDs();
   }
 
-  sendToClientBy(UUID: string, document: Record<string, any>) {
-    return this.wsservice.sendToClientBy(UUID, document);
+  async emitNewMessage(
+    parsedMessage: DecryptedRegularMessage,
+    endpointToUseAsSource: model.Endpoint,
+  ) {
+    const validationErrors = validate(parsedMessage, DecryptedRegularMessage);
+    if (validationErrors.length)
+      throw new Error('Message from authorized client: Validation error');
+
+    await this.validateIncomingMessage(endpointToUseAsSource, parsedMessage);
+
+    if (
+      endpointToUseAsSource.event.type === EventType.QUERY &&
+      endpointToUseAsSource.type === EndpointType.EVENT_SINK
+    ) {
+      const messageTag = `${parsedMessage.replyForMessageUUID}${parsedMessage.endpointUUID}`;
+      if (this.messagesWaitingForResponseStore.has(messageTag)) {
+        const { sourceEndpointUUID } =
+          this.messagesWaitingForResponseStore.get(messageTag);
+
+        await this.wsservice.sendToClientsBy(
+          ({ endpoints }) =>
+            endpoints.some(({ uuid }) => sourceEndpointUUID === uuid),
+
+          async (clientReceiver) => [
+            await this.encryptMessage(clientReceiver, {
+              endpointUUID: sourceEndpointUUID,
+              messageUUID: parsedMessage.messageUUID,
+              parameters: parsedMessage.parameters,
+              replyForMessageUUID: parsedMessage.replyForMessageUUID,
+            }),
+          ],
+
+          { untilFirstMatch: true },
+        );
+
+        this.messagesWaitingForResponseStore.delete(messageTag);
+        return;
+      }
+      throw new Error(
+        `you cannot reply for message ${parsedMessage.replyForMessageUUID} because you didnt get it`,
+      );
+    }
+
+    const dataConsumerEndpoints = await this.routeRepo.getManyRoutesBy({
+      sourceEndpointId: endpointToUseAsSource.id,
+    });
+
+    const dataConsumerClientIds = new Set(
+      dataConsumerEndpoints.map(({ sinkEndpoint: { clientId } }) => clientId),
+    );
+
+    const dataConsumerEndpointUUIDs = new Set(
+      dataConsumerEndpoints.map(({ sinkEndpoint: { uuid } }) => uuid),
+    );
+
+    await this.wsservice.sendToClientsBy(
+      ({ id }) => dataConsumerClientIds.has(id),
+      async (clientReceiver) => {
+        const encryptedMessages: string[] = [];
+        for (const { uuid: receiverEndpointUUID } of clientReceiver.endpoints) {
+          if (!dataConsumerEndpointUUIDs.has(receiverEndpointUUID)) continue;
+
+          const message: DecryptedRegularMessage = {
+            endpointUUID: receiverEndpointUUID,
+            messageUUID: parsedMessage.messageUUID,
+            parameters: parsedMessage.parameters,
+          };
+
+          if (
+            endpointToUseAsSource.event.type === EventType.QUERY &&
+            endpointToUseAsSource.type === EndpointType.EVENT_SOURCE
+          )
+            this.messagesWaitingForResponseStore.set(
+              `${parsedMessage.messageUUID}${receiverEndpointUUID}`,
+              {
+                sourceEndpointUUID: endpointToUseAsSource.uuid,
+              },
+            );
+
+          const encryptedMessage = await this.encryptMessage(
+            clientReceiver,
+            message,
+          );
+
+          encryptedMessages.push(encryptedMessage);
+        }
+        return encryptedMessages;
+      },
+    );
   }
 
   private authRequestCB: AuthRequestCB = async (message) => {
@@ -101,99 +193,87 @@ export class MessagesUseCase {
         };
   };
 
-  private authedMessageCB: AuthedMessageCB = async (message, client) => {
+  private authedMessageCB: AuthedMessageCB = async (message, clientSender) => {
     const worker = this.encryptionUseCase.getEncryptionWorker(
-      client.encryptionWorkerUUID,
+      clientSender.encryptionWorkerUUID,
     );
 
     const jsonString = await worker.decryptEncryptedJsonStringSentFromClient(
-      client.encryptionWorkerCredentials,
+      clientSender.encryptionWorkerCredentials,
       message.toString(),
     );
 
     const parsedMessage: DecryptedRegularMessage = JSON.parse(jsonString);
     console.log('authedMessageCB parsedMessage: ', parsedMessage);
 
-    const validationErrors = validate(parsedMessage, DecryptedRegularMessage);
-    if (validationErrors.length)
-      throw new Error('Message from authorized client: Validation error');
-
-    const endpoint = client.endpoints.find(
-      ({ uuid }) => parsedMessage.sentFromEndpointUUID === uuid,
+    const endpoint = clientSender.endpoints.find(
+      ({ uuid }) => parsedMessage.endpointUUID === uuid,
     );
 
-    await this.validateIncomingMessage(endpoint, parsedMessage);
-
-    const dataConsumerEndpoints = await this.routeRepo.getManyRoutesBySource(
-      endpoint.id,
-    );
-
-    const dataConsumerClientIds = new Set(
-      dataConsumerEndpoints.map(({ sinkEndpoint: { clientId } }) => clientId),
-    );
-
-    const dataConsumerEndpointUUIDs = new Set(
-      dataConsumerEndpoints.map(({ sinkEndpoint: { uuid } }) => uuid),
-    );
-
-    this.wsservice.sendToManyClientsBy(
-      ({ id }) => dataConsumerClientIds.has(id),
-      async (client) => {
-        const encryptedMessages: string[] = [];
-        for (const { uuid: endpointUUID } of client.endpoints) {
-          if (!dataConsumerEndpointUUIDs.has(endpointUUID)) continue;
-
-          const message = plainToInstance(DecryptedRegularMessage, {
-            sentFromEndpointUUID: endpointUUID,
-            messageUUID: parsedMessage.messageUUID,
-            parameters: parsedMessage.parameters,
-          });
-
-          // TODO: сюда кажется надо добавить как раз ту хуйню с сериализацией параметров
-          // а может и не надо потому что мы по факту отправляем то что приняли и оно уже
-          // по сути сериализовано, если пихнули в сообщение
-          const encryptedMessage = await this.encryptionUseCase
-            .getEncryptionWorker(client.encryptionWorkerUUID)
-            .encryptJsonStringToSendToClient(
-              client.encryptionWorkerCredentials,
-              JSON.stringify(message),
-            );
-
-          encryptedMessages.push(encryptedMessage);
-        }
-        return encryptedMessages;
-      },
-    );
-
-    // this.wsservice.sendToManyClientsBy()
+    await this.emitNewMessage(parsedMessage, endpoint);
   };
 
   private authedClientOfflineCB: OnlineStatusChangedCB = async (client) => {
     console.log(`Client ${client.uuid} disconnected`);
   };
 
+  private encryptMessage(
+    clientReceiver: model.Client,
+    message: DecryptedRegularMessage,
+  ) {
+    return this.encryptionUseCase
+      .getEncryptionWorker(clientReceiver.encryptionWorkerUUID)
+      .encryptJsonStringToSendToClient(
+        clientReceiver.encryptionWorkerCredentials,
+        JSON.stringify(message),
+      );
+  }
+
   private async validateIncomingMessage(
-    endpoint: model.Endpoint,
+    endpointToUseAsSource: model.Endpoint,
     parsedMessage: DecryptedRegularMessage,
   ) {
-    if (!endpoint)
+    if (!endpointToUseAsSource)
       throw new Error(
-        `Client does not have endpoint ${parsedMessage.sentFromEndpointUUID} and cannot use it`,
+        `Client does not have endpoint ${parsedMessage.endpointUUID} and cannot use it`,
+      );
+
+    if (endpointToUseAsSource.uuid !== parsedMessage.endpointUUID)
+      throw new Error(
+        'Internal error: parsedMessage.endpointUUID is not equal to endpointToUseAsSource.uuid',
       );
 
     const canClientSendMessageWithEndpoint =
-      endpoint.type === EndpointType.EVENT_SOURCE ||
-      (endpoint.type === EndpointType.EVENT_SINK &&
-        endpoint.event.type === EventType.QUERY);
+      endpointToUseAsSource.type === EndpointType.EVENT_SOURCE ||
+      (endpointToUseAsSource.type === EndpointType.EVENT_SINK &&
+        endpointToUseAsSource.event.type === EventType.QUERY);
 
     if (!canClientSendMessageWithEndpoint)
       throw new Error(
-        `Clients cannot send messages using not source endpoint ${parsedMessage.sentFromEndpointUUID}`,
+        `Clients cannot send messages using not source endpoint ${parsedMessage.endpointUUID}`,
+      );
+
+    if (
+      endpointToUseAsSource.type === EndpointType.EVENT_SOURCE &&
+      endpointToUseAsSource.event.type === EventType.QUERY &&
+      parsedMessage.replyForMessageUUID
+    )
+      throw new Error(
+        `Client cannot set "replyForMessageUUID" field when they are using query source endpoint ${parsedMessage.endpointUUID}`,
+      );
+
+    if (
+      endpointToUseAsSource.type === EndpointType.EVENT_SINK &&
+      endpointToUseAsSource.event.type === EventType.QUERY &&
+      !parsedMessage.replyForMessageUUID
+    )
+      throw new Error(
+        `Client must set "replyForMessageUUID" field when they are using query sink endpoint ${parsedMessage.endpointUUID}`,
       );
 
     const {
       event: { parameterAssociations },
-    } = endpoint;
+    } = endpointToUseAsSource;
 
     const requiredEventParametersUUIDs = parameterAssociations
       .filter(({ isParameterRequired }) => isParameterRequired)

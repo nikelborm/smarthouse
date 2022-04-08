@@ -48,24 +48,25 @@ export class DecryptedRegularMessage {
   messageUUID: string;
 
   @IsUUID('4')
-  sentFromEndpointUUID: string;
+  endpointUUID: string;
+
+  @IsOptional()
+  @IsUUID('4')
+  replyForMessageUUID?: MessageParameter[];
 
   @IsOptional()
   @ValidateNested({ each: true })
   @Type(() => MessageParameter)
   parameters?: MessageParameter[];
 
-  getParameterValueBy(uuid: string) {
+  getParameterValueBy?(uuid: string) {
     if (!isUUID(uuid))
       throw new Error(
         'DecryptedRegularMessage getParameterValueBy: function parameter should be uuid',
       );
-    const parameter = this.parameters.find((param) => param.uuid === uuid);
 
-    if (!parameter)
-      throw new Error(
-        'DecryptedRegularMessage getParameterValueBy: function parameter should be uuid',
-      );
+    const parameter =
+      this.parameters.find((param) => param.uuid === uuid) || null;
 
     return parameter.value;
   }

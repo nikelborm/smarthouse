@@ -29,22 +29,14 @@ export class WebsocketService {
       .map((connection) => connection.client.uuid);
   }
 
-  async sendToClientBy(UUID: string, document: Record<string, any>) {
-    let wasClientFound = false;
-    for (const connection of this.server.clients) {
-      if (connection.client.uuid === UUID) {
-        await this.sendInto(connection, document);
-        wasClientFound = true;
-      }
-    }
-    if (!wasClientFound) throw new Error('Client does not connected to server');
-  }
-
-  async sendToManyClientsBy(
+  async sendToClientsBy(
     UUIDsOrPredicate: string[] | ((client: model.Client) => boolean),
     getEncryptedMessagesForMatchedClient: (
       client: model.Client,
     ) => Promise<string[]>,
+    config?: {
+      untilFirstMatch: boolean;
+    },
   ) {
     let predicate: (socket: WebSocketCustomClient) => boolean;
 
@@ -65,6 +57,7 @@ export class WebsocketService {
       );
 
       encryptedMessages.forEach((message) => connection.send(message));
+      if (config?.untilFirstMatch) break;
     }
   }
 
@@ -81,7 +74,9 @@ export class WebsocketService {
           await this.firstAuthMesssageHandler(socket, message);
         } catch (error: any) {
           console.log('first client message handler error', error, message);
-          await this.sendInto(socket, { error: error.message });
+          await this.sendWithoutEncryptionInto(socket, {
+            error: error.message,
+          });
           socket.close(1000);
         }
       });
@@ -94,7 +89,7 @@ export class WebsocketService {
     });
   }
 
-  private async sendInto(
+  private async sendWithoutEncryptionInto(
     connection: WebSocketCustomClient,
     document: Record<string, any>,
   ) {
@@ -132,7 +127,7 @@ export class WebsocketService {
           error,
           message,
         );
-        await this.sendInto(socket, { error: error.message });
+        await this.sendWithoutEncryptionInto(socket, { error: error.message });
       }
     });
   }
@@ -164,7 +159,7 @@ export interface AuthRequestCB {
 }
 
 export interface AuthedMessageCB {
-  (rawEncryptedMessage: RawData, client: model.Client): Promise<any>;
+  (rawEncryptedMessage: RawData, clientSender: model.Client): Promise<any>;
 }
 
 export interface OnlineStatusChangedCB {

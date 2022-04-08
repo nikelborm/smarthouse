@@ -34,4 +34,21 @@ export class RouteUseCase {
       sourceEndpointId,
     });
   }
+
+  async getRoutesMessageHandler(message: DecryptedRegularMessage) {
+    const sinkEndpointId = message.getParameterValueBy(
+      SupportedEventsParamsEndpoints.ROUTE_INCOMING_ENDPOINT_ID_PARAMETER,
+    );
+
+    const sourceEndpointId = message.getParameterValueBy(
+      SupportedEventsParamsEndpoints.ROUTE_OUTCOMING_ENDPOINT_ID_PARAMETER,
+    );
+
+    await this.routeRepo.getManyRoutesBy({
+      sinkEndpointId,
+      sourceEndpointId,
+    });
+
+    // await this.messagesUseCase.sendToClientBy();
+  }
 }
