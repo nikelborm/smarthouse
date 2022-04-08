@@ -17,6 +17,7 @@ export const GatewayAsClientInitializer = {
       )
     ).map(({ uuid }) => uuid);
 
+    console.log('endopintUUIDsRegisteredInDB: ', endopintUUIDsRegisteredInDB);
     return endopintUUIDsRegisteredInDB;
   },
   inject: [repo.EndpointRepo, ConfigService],
