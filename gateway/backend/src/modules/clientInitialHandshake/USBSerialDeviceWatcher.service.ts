@@ -4,12 +4,10 @@ import { process } from 'core-worker';
 import { EventEmitter } from 'events';
 import { differenceBetweenSetsInArray } from 'src/tools';
 
-class DeviceWatchEmitter extends EventEmitter {}
-
 @Injectable()
 export class USBSerialDeviceWatcherService {
   private deviceScanInterval: NodeJS.Timer;
-  private deviceWatchEmitter = new DeviceWatchEmitter();
+  private deviceWatchEmitter = new EventEmitter();
   private prevSerialPortsSet: Set<string>;
 
   constructor(private readonly configService: ConfigService) {

@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InitHandshakeQuery, InitHandshakeResponse, validate } from 'src/types';
-import { DeepPartial, EntityManager, InsertResult } from 'typeorm';
+import { EntityManager } from 'typeorm';
 import { InjectEntityManager } from '@nestjs/typeorm';
 import { model, repo } from '../infrastructure';
 import { EncryptionUseCase } from '../encryption';
@@ -9,7 +9,7 @@ import {
   doesArraysIntersects,
   remapToIndexedObject,
 } from 'src/tools';
-import { IEncryptionWorker } from '../encryption/IEncryptionWorker';
+import { DataValidatorUseCase } from '../dataValidator';
 
 @Injectable()
 export class ClientInitialHandshakeUseCase {
@@ -17,7 +17,8 @@ export class ClientInitialHandshakeUseCase {
     @InjectEntityManager()
     private readonly entityManager: EntityManager,
     private readonly eventRepo: repo.EventRepo,
-    private readonly encryptionUseCase: EncryptionUseCase,
+    private readonly encryptionUseCase: EncryptionUseCase, // needed for all encryption workers be ready at this moment
+    private readonly dataValidatorUseCase: DataValidatorUseCase, // needed for all data validators be ready at this moment
     private readonly clientRepo: repo.ClientRepo,
     private readonly eventParameterRepo: repo.EventParameterRepo,
     private readonly endpointRepo: repo.EndpointRepo,
@@ -26,11 +27,14 @@ export class ClientInitialHandshakeUseCase {
 
   async init(handshakeRequest: InitHandshakeQuery) {
     return await this.entityManager.transaction(async (transactionManager) => {
-      return await this.renameMeLater(transactionManager, handshakeRequest);
+      return await this.executeClientHandshake(
+        transactionManager,
+        handshakeRequest,
+      );
     });
   }
 
-  async renameMeLater(
+  async executeClientHandshake(
     transactionManager: EntityManager,
     handshakeRequest: InitHandshakeQuery,
   ): Promise<InitHandshakeResponse> {
@@ -84,9 +88,13 @@ export class ClientInitialHandshakeUseCase {
 
     const eventsToInsertUUIDs = eventsToInsert.map(({ uuid }) => uuid);
 
-    await this.eventRepo.insertInTransactionOnlyNewEvents(
-      eventsToInsert,
-      transactionManager,
+    const newlyInsertedEventUUIDs = new Set(
+      (
+        await this.eventRepo.insertInTransactionOnlyNewEvents(
+          eventsToInsert,
+          transactionManager,
+        )
+      ).generatedMaps.map(({ uuid }) => uuid),
     );
 
     const indexedEvents = remapToIndexedObject(
@@ -107,7 +115,7 @@ export class ClientInitialHandshakeUseCase {
 
     const parameterToEventAssociationOnlyFromNewEvents =
       eventToParameterAssociationsToInsert
-        .filter(({ eventUUID }) => eventUUID in indexedEvents)
+        .filter(({ eventUUID }) => newlyInsertedEventUUIDs.has(eventUUID))
         .map(({ eventParameterUUID, eventUUID, isParameterRequired }) => ({
           eventId: indexedEvents[eventUUID].id,
           eventParameterId: indexedEventParameters[eventParameterUUID].id,
@@ -176,8 +184,15 @@ export class ClientInitialHandshakeUseCase {
     if (validationErrors.length)
       throw new Error('InitHandshakeQuery: validation error');
 
+    // check if worker is existing
     const encryptionWorker =
       this.encryptionUseCase.getEncryptionWorker(encryptionWorkerUUID);
+
+    // check if all validators are existing
+    for (const { dataValidatorUUID } of initHandshakeQuery.supported
+      .eventParameters) {
+      this.dataValidatorUseCase.getValidator(dataValidatorUUID);
+    }
 
     if (
       !(await encryptionWorker.isClientSideHandshakeCredentialsValid(

@@ -1,13 +1,13 @@
-import { isString } from 'class-validator';
+import { isUUID } from 'class-validator';
 import { SerializedIntoJsonData, IDataValidator } from '../IDataValidator';
 
-export class StringDataValidator implements IDataValidator<string> {
-  readonly uuid = '7f28e4a4-eec8-408f-bf61-a4d7cf734a45';
+export class UUIDDataValidator implements IDataValidator<string> {
+  readonly uuid = '55912e8f-dcf8-4e8a-8816-a0e33c4c4366';
 
-  readonly name = 'String validator';
+  readonly name = 'UUID validator';
 
   verify(value: SerializedIntoJsonData): boolean {
-    return isString(value);
+    return isUUID(value);
   }
 
   deserialize(value: SerializedIntoJsonData): string {

@@ -1,3 +1,4 @@
+import { ConfigService } from '@nestjs/config';
 import { AuthMessage } from 'src/types';
 import { RawData, Server, WebSocket } from 'ws';
 import { model } from '../infrastructure';
@@ -6,27 +7,18 @@ export class WebsocketService {
   private readonly server: Server<WebSocketCustomClient>;
   private deadSocketsCleanerInterval: NodeJS.Timer;
 
-  private authRequestCB: AuthRequestCB;
-  private authedMessageCB: AuthedMessageCB;
-  private authedClientOfflineCB: OnlineStatusChangedCB;
-
-  constructor(config: {
-    port: number;
-    authRequestCB: AuthRequestCB;
-    authedMessageCB: AuthedMessageCB;
-    authedClientOfflineCB: OnlineStatusChangedCB;
-  }) {
+  constructor(
+    private readonly configService: ConfigService,
+    private readonly callbacks: {
+      authRequestCB: AuthRequestCB;
+      authedMessageCB: AuthedMessageCB;
+      authedClientOfflineCB: OnlineStatusChangedCB;
+    },
+  ) {
     this.server = new Server({
-      port: config.port,
+      port: this.configService.get('webSocketServerPort'),
     });
 
-    this.authRequestCB = config.authRequestCB;
-    // Здесь же в этом обработчике нужно написать функционал для трекинга, что вот устройство вышло в онлайн,
-    // кто подписан на это событие, тем отправить уведомление, например веб сервер будет подписан на это событие
-    this.authedMessageCB = config.authedMessageCB;
-    this.authedClientOfflineCB =
-      config.authedClientOfflineCB ||
-      (async (client) => console.log(`Client ${client.uuid} disconnected`));
     this.handleConnections();
     this.startDeadSocketCleaning();
   }
@@ -37,34 +29,14 @@ export class WebsocketService {
       .map((connection) => connection.client.uuid);
   }
 
-  async sendToClientBy(UUID: string, document: Record<string, any>) {
-    let wasClientFound = false;
-    for (const connection of this.server.clients) {
-      if (connection.client.uuid === UUID) {
-        await this.sendInto(connection, document);
-        wasClientFound = true;
-      }
-    }
-    if (!wasClientFound) throw new Error('Client does not connected to server');
-  }
-
-  sendToManyClientsBy(
-    predicate: (client: model.Client) => boolean,
-    getEncryptedMessagesForMatchedClient: (
-      client: model.Client,
-    ) => Promise<string[]>,
-  ): void;
-  sendToManyClientsBy(
-    UUIDs: string[],
-    getEncryptedMessagesForMatchedClient: (
-      client: model.Client,
-    ) => Promise<string[]>,
-  ): void;
-  async sendToManyClientsBy(
+  async sendToClientsBy(
     UUIDsOrPredicate: string[] | ((client: model.Client) => boolean),
     getEncryptedMessagesForMatchedClient: (
       client: model.Client,
     ) => Promise<string[]>,
+    config?: {
+      untilFirstMatch: boolean;
+    },
   ) {
     let predicate: (socket: WebSocketCustomClient) => boolean;
 
@@ -78,13 +50,14 @@ export class WebsocketService {
     }
 
     for (const connection of this.server.clients) {
-      if (predicate(connection)) {
-        const encryptedMessages = await getEncryptedMessagesForMatchedClient(
-          connection.client,
-        );
+      if (!predicate(connection)) continue;
 
-        encryptedMessages.forEach((message) => connection.send(message));
-      }
+      const encryptedMessages = await getEncryptedMessagesForMatchedClient(
+        connection.client,
+      );
+
+      encryptedMessages.forEach((message) => connection.send(message));
+      if (config?.untilFirstMatch) break;
     }
   }
 
@@ -101,7 +74,9 @@ export class WebsocketService {
           await this.firstAuthMesssageHandler(socket, message);
         } catch (error: any) {
           console.log('first client message handler error', error, message);
-          await this.sendInto(socket, { error: error.message });
+          await this.sendWithoutEncryptionInto(socket, {
+            error: error.message,
+          });
           socket.close(1000);
         }
       });
@@ -109,12 +84,12 @@ export class WebsocketService {
       socket.on('close', () => {
         // TODO: проверить вызывается ли этот метод если мы teminate`нули девайс
         // надо ли вызывать обработчик authorizedClientDisconnectedHandler в двух местах?
-        this.authedClientOfflineCB(socket.client);
+        this.callbacks.authedClientOfflineCB(socket.client);
       });
     });
   }
 
-  private async sendInto(
+  private async sendWithoutEncryptionInto(
     connection: WebSocketCustomClient,
     document: Record<string, any>,
   ) {
@@ -133,7 +108,9 @@ export class WebsocketService {
     const parsedMessage = JSON.parse(message.toString());
     console.log('firstAuthMesssageHandler parsedMessage: ', parsedMessage);
 
-    const authorizationResult = await this.authRequestCB(parsedMessage);
+    const authorizationResult = await this.callbacks.authRequestCB(
+      parsedMessage,
+    );
 
     if (!authorizationResult.isAuthorized)
       throw new Error('Authorization: Crypto worker denied auth');
@@ -143,14 +120,14 @@ export class WebsocketService {
 
     socket.on('message', async (message: RawData) => {
       try {
-        await this.authedMessageCB(message, socket.client);
+        await this.callbacks.authedMessageCB(message, socket.client);
       } catch (error: any) {
         console.log(
           `Authed message from client ${socket.client.uuid} error`,
           error,
           message,
         );
-        await this.sendInto(socket, { error: error.message });
+        await this.sendWithoutEncryptionInto(socket, { error: error.message });
       }
     });
   }
@@ -182,7 +159,7 @@ export interface AuthRequestCB {
 }
 
 export interface AuthedMessageCB {
-  (rawEncryptedMessage: RawData, client: model.Client): Promise<any>;
+  (rawEncryptedMessage: RawData, clientSender: model.Client): Promise<any>;
 }
 
 export interface OnlineStatusChangedCB {

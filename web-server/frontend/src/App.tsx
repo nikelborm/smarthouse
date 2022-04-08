@@ -1,4 +1,4 @@
-import { Route, Routes, Navigate, Outlet, useMatch } from 'react-router-dom';
+import { Route, Routes, Navigate, Outlet } from 'react-router-dom';
 import { AdminPanelWrapper } from 'components';
 import {
   Events,
@@ -14,8 +14,11 @@ import {
   SpecificEvent,
 } from 'pages';
 import { usePath } from 'hooks';
+import { useAuthedUser } from 'utils/authContext';
 
 function App() {
+  const { isAuthed } = useAuthedUser();
+  usePath();
   return (
     <Routes>
       <Route path="/" element={<Root />} />
@@ -23,7 +26,19 @@ function App() {
       <Route path="/auth" element={<AuthWrapper />}>
         <Route path="login" element={<Login />} />
         <Route path="registration" element={<Register />} />
-        <Route path="*" element={<Navigate to="login" />} />
+        <Route
+          path="*"
+          element={
+            <Route
+              path="*"
+              element={
+                <Navigate
+                  to={isAuthed ? '/adminPanel/routesGraph' : '/auth/login'}
+                />
+              }
+            />
+          }
+        />
       </Route>
 
       <Route path="/adminPanel" element={<AdminPanelWrapper />}>
@@ -44,7 +59,14 @@ function App() {
 
         <Route path="messagesDashboard" element={<MessagesDashboard />} />
 
-        <Route path="*" element={<Navigate to="profile" />} />
+        <Route
+          path="*"
+          element={
+            <Navigate
+              to={isAuthed ? '/adminPanel/routesGraph' : '/auth/login'}
+            />
+          }
+        />
       </Route>
 
       <Route path="*" element={<Navigate to="/" />} />

@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { messages } from 'src/config';
 import {
   createManyWithRelations,
+  createOnePlain,
   createOneWithRelations,
   NewEntity,
   PlainEntityWithoutId,
@@ -35,11 +36,49 @@ export class RouteRepo {
     return route;
   }
 
-  async getManyRoutesBySource(endpointId: number) {
+  async getManyRoutesBy({
+    sinkEndpointId,
+    sourceEndpointId,
+  }: {
+    sourceEndpointId?: number;
+    sinkEndpointId?: number;
+  }) {
     const routes = await this.repo.find({
-      where: { sourceEndpointId: endpointId },
+      where: {
+        ...(sourceEndpointId && { sourceEndpointId }),
+        ...(sinkEndpointId && { sinkEndpointId }),
+      },
       select: {
-        sinkEndpoint: {
+        ...(sourceEndpointId && {
+          sourceEndpoint: {
+            uuid: true,
+            clientId: true,
+          },
+        }),
+        ...(sinkEndpointId && {
+          sinkEndpoint: {
+            uuid: true,
+            clientId: true,
+          },
+        }),
+      },
+      relations: {
+        ...(sourceEndpointId && { sourceEndpointId: true }),
+        ...(sinkEndpointId && { sinkEndpointId: true }),
+      },
+    });
+    return routes;
+  }
+
+  async getManyRoutesComingFrom(clientId: number) {
+    const routes = await this.repo.find({
+      where: {
+        sourceEndpoint: {
+          clientId,
+        },
+      },
+      select: {
+        sourceEndpoint: {
           uuid: true,
           clientId: true,
         },
@@ -49,6 +88,10 @@ export class RouteRepo {
       },
     });
     return routes;
+  }
+
+  createOnePlain(newRoute: PlainEntityWithoutId<Route>) {
+    return createOnePlain(this.repo, newRoute, 'route');
   }
 
   createOneWithRelations(newRoute: NewEntity<Route>) {

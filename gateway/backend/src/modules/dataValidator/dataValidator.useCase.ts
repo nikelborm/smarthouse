@@ -11,6 +11,7 @@ export class DataValidatorUseCase {
     initialStore: DataValidatorStoreFormat,
   ) {
     this.store = initialStore;
+    console.log('DataValidatorUseCase initialStore: ', initialStore);
   }
 
   getValidator(uuid: string) {

@@ -75,7 +75,6 @@ export class ClientRepo {
         messages.repo.common.cantGetNotFoundByUUID('client', uuid),
       );
     client.uuid = uuid;
-    console.log(client);
     return client;
   }
 

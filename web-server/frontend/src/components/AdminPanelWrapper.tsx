@@ -11,7 +11,8 @@ export function AdminPanelWrapper() {
   const [isMenuCollapsed, setCollapsedMenu] = useState(false);
 
   const { deepestPathPart, pathParts } = usePath();
-  if (deepestPathPart === 'adminPanel') return <Navigate to="profile" />;
+
+  if (deepestPathPart === 'adminPanel') return <Navigate to="routesGraph" />;
 
   return (
     <Layout style={{ minHeight: '100vh' }}>
@@ -35,8 +36,8 @@ export function AdminPanelWrapper() {
       <Layout>
         <Header style={{ background: '#fff', padding: 0 }}>
           <PageHeader
-            title={routes[deepestPathPart as RoutesEnum].pageTitle}
-            subTitle={routes[deepestPathPart as RoutesEnum].description}
+            title={routes[deepestPathPart as RoutesEnum]?.pageTitle}
+            subTitle={routes[deepestPathPart as RoutesEnum]?.description}
           />
         </Header>
         <div style={{ margin: '16px', opacity: '0' }}></div>
