@@ -20,7 +20,7 @@ function setLocalStorageAuth(obj) {
 
 function isObject(toCheck) {
   return (
-    typeof toCheck === 'object' && !Array.isArray(toCheck) && toCheck !== null
+    typeof (toCheck === 'object') && !Array.isArray(toCheck) && toCheck !== null
   );
 }
 
@@ -35,23 +35,25 @@ const authedStateFromPreviousSession = getLocalStorageAuth();
 
 const AuthContext = React.createContext(authedStateFromPreviousSession);
 
-let refreshAuthContext;
+let refreshAuthContext: React.Dispatch<React.SetStateAction<number>>;
 
 export function useAuthedUser() {
-  // returns: {
-  //   isAuthed: Boolean,
-  //   authInfo: Object
-  // }
   useContext(AuthContext);
 
-  return getLocalStorageAuth();
+  return getLocalStorageAuth() as {
+    isAuthed: boolean;
+    authInfo: Record<string, any>;
+  };
 }
 
-export function updateAuthContext(obj) {
-  // expects: {
-  //   isAuthed: Boolean,
-  //   authInfo: Object
-  // }
+export function updateAuthContext(
+  obj:
+    | {
+        isAuthed: true;
+        authInfo: Record<string, any>;
+      }
+    | { isAuthed: false }
+) {
   const prevAuthState = getLocalStorageAuth();
 
   const isObjectCorrect =
@@ -73,7 +75,7 @@ export function updateAuthContext(obj) {
 }
 
 export function AuthContextProvider({ children }) {
-  const setAuthContextState = useState()[1];
+  const setAuthContextState = useState(1)[1];
 
   refreshAuthContext = setAuthContextState;
 
