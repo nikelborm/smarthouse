@@ -1,8 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import {
-  ClientInitialHandshakeUseCase,
-  GatewayAsClientUseCase,
-} from 'src/modules';
+import { ClientInitialHandshakeUseCase } from 'src/modules';
 
 import { repo } from 'src/modules/infrastructure';
 import { EndpointType, EventType } from 'src/types';
@@ -12,7 +9,6 @@ export class MockDataUseCase {
   constructor(
     private readonly eventRepo: repo.EventRepo,
     private readonly clientInitialHandshakeUseCase: ClientInitialHandshakeUseCase,
-    private readonly gatewayAsClientUseCase: GatewayAsClientUseCase,
   ) {}
 
   async fillDBScript() {
