@@ -9,6 +9,7 @@ export const GatewayAsClientInitializer = {
   provide: GATEWAY_AS_CLIENT_INITIALIZER_KEY,
   useFactory: async () => {
     console.log('GatewayAsClientInitializer factory');
+    return {};
   },
   inject: [EncryptionUseCase, DataValidatorUseCase],
 };

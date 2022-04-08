@@ -1,5 +1,4 @@
-import { Injectable } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
+import { Inject, Injectable } from '@nestjs/common';
 import { differenceBetweenSetsInArray } from 'src/tools';
 import {
   AuthMessage,
@@ -8,7 +7,6 @@ import {
   EventType,
   validate,
 } from 'src/types';
-import { EventEmitter } from 'stream';
 import { DataValidatorUseCase } from '../dataValidator';
 import { EncryptionUseCase } from '../encryption';
 import { model, repo } from '../infrastructure';
@@ -18,6 +16,10 @@ import {
   AuthRequestCB,
   OnlineStatusChangedCB,
 } from './websocket.service';
+import {
+  IWebsocketServiceFactory,
+  WEBSOCKET_SERVICE_FACTORY_KEY,
+} from './websocketService.provider';
 
 @Injectable()
 export class MessagesUseCase {
@@ -25,12 +27,12 @@ export class MessagesUseCase {
   constructor(
     private readonly clientRepo: repo.ClientRepo,
     private readonly routeRepo: repo.RouteRepo,
-    private readonly configService: ConfigService,
     private readonly dataValidatorUseCase: DataValidatorUseCase,
     private readonly encryptionUseCase: EncryptionUseCase,
+    @Inject(WEBSOCKET_SERVICE_FACTORY_KEY)
+    private readonly websocketServiceFactory: IWebsocketServiceFactory,
   ) {
-    this.wsservice = new WebsocketService({
-      port: this.configService.get('webSocketServerPort'),
+    this.wsservice = this.websocketServiceFactory.create({
       authRequestCB: this.authRequestCB,
       authedMessageCB: this.authedMessageCB,
       authedClientOfflineCB: this.authedClientOfflineCB,
@@ -87,7 +89,7 @@ export class MessagesUseCase {
       ({ uuid }) => parsedMessage.endpointUUID === uuid,
     );
 
-    this.validateMessage(endpoint, parsedMessage);
+    await this.validateMessage(endpoint, parsedMessage);
 
     const dataConsumerEndpoints = await this.routeRepo.getManyRoutesBySource(
       endpoint.id,
@@ -133,11 +135,11 @@ export class MessagesUseCase {
     // this.wsservice.sendToManyClientsBy()
   };
 
-  private authedClientOfflineCB: OnlineStatusChangedCB = async () => {
-    console.log('MessagesUseCase authedClientOfflineCB');
+  private authedClientOfflineCB: OnlineStatusChangedCB = async (client) => {
+    console.log(`Client ${client.uuid} disconnected`);
   };
 
-  private validateMessage(
+  private async validateMessage(
     endpoint: model.Endpoint,
     parsedMessage: DecryptedRegularMessage,
   ) {
@@ -229,5 +231,3 @@ export class MessagesUseCase {
     }
   }
 }
-
-class MessageWithGatewayAsRecipientEmitter extends EventEmitter {}
