@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InitHandshakeQuery, InitHandshakeResponse, validate } from 'src/types';
-import { DeepPartial, EntityManager, InsertResult } from 'typeorm';
+import { EntityManager } from 'typeorm';
 import { InjectEntityManager } from '@nestjs/typeorm';
 import { model, repo } from '../infrastructure';
 import { EncryptionUseCase } from '../encryption';
@@ -9,7 +9,6 @@ import {
   doesArraysIntersects,
   remapToIndexedObject,
 } from 'src/tools';
-import { IEncryptionWorker } from '../encryption/IEncryptionWorker';
 
 @Injectable()
 export class ClientInitialHandshakeUseCase {
@@ -26,11 +25,14 @@ export class ClientInitialHandshakeUseCase {
 
   async init(handshakeRequest: InitHandshakeQuery) {
     return await this.entityManager.transaction(async (transactionManager) => {
-      return await this.renameMeLater(transactionManager, handshakeRequest);
+      return await this.executeClientHandshake(
+        transactionManager,
+        handshakeRequest,
+      );
     });
   }
 
-  async renameMeLater(
+  async executeClientHandshake(
     transactionManager: EntityManager,
     handshakeRequest: InitHandshakeQuery,
   ): Promise<InitHandshakeResponse> {
@@ -84,9 +86,13 @@ export class ClientInitialHandshakeUseCase {
 
     const eventsToInsertUUIDs = eventsToInsert.map(({ uuid }) => uuid);
 
-    await this.eventRepo.insertInTransactionOnlyNewEvents(
-      eventsToInsert,
-      transactionManager,
+    const newlyInsertedEventUUIDs = new Set(
+      (
+        await this.eventRepo.insertInTransactionOnlyNewEvents(
+          eventsToInsert,
+          transactionManager,
+        )
+      ).generatedMaps.map(({ uuid }) => uuid),
     );
 
     const indexedEvents = remapToIndexedObject(
@@ -107,7 +113,7 @@ export class ClientInitialHandshakeUseCase {
 
     const parameterToEventAssociationOnlyFromNewEvents =
       eventToParameterAssociationsToInsert
-        .filter(({ eventUUID }) => eventUUID in indexedEvents)
+        .filter(({ eventUUID }) => newlyInsertedEventUUIDs.has(eventUUID))
         .map(({ eventParameterUUID, eventUUID, isParameterRequired }) => ({
           eventId: indexedEvents[eventUUID].id,
           eventParameterId: indexedEventParameters[eventParameterUUID].id,
