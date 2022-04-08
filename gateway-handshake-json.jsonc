@@ -19,20 +19,20 @@
       },
       {
         "uuid": "715622d1-7866-466e-9786-49c8ef2e93f9",
-        "name": "UUID выходного эндпоинта",
-        "dataValidatorUUID": "55912e8f-dcf8-4e8a-8816-a0e33c4c4366",
+        "name": "ID выходного эндпоинта",
+        "dataValidatorUUID": "dafb84cc-8e4d-45a2-9dac-41067be67b89",
         "measurementUnit": "-----"
       },
       {
         "uuid": "9ac7f810-eabc-43bc-a714-e6f48b736d7c",
-        "name": "UUID входного эндпоинта",
-        "dataValidatorUUID": "55912e8f-dcf8-4e8a-8816-a0e33c4c4366",
+        "name": "ID входного эндпоинта",
+        "dataValidatorUUID": "dafb84cc-8e4d-45a2-9dac-41067be67b89",
         "measurementUnit": "-----"
       },
       {
         "uuid": "4491eaf5-9f95-489d-9493-5af8e75cbf76",
         "name": "Надо ли приджойнивать маршруты к клиенту",
-        "dataValidatorUUID": "55912e8f-dcf8-4e8a-8816-a0e33c4c4366",
+        "dataValidatorUUID": "930877ce-d692-4ae1-a1db-580ae6546c36",
         "measurementUnit": "-----"
       }
     ],

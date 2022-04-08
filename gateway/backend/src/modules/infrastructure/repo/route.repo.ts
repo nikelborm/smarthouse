@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { messages } from 'src/config';
 import {
   createManyWithRelations,
+  createOnePlain,
   createOneWithRelations,
   NewEntity,
   PlainEntityWithoutId,
@@ -49,6 +50,10 @@ export class RouteRepo {
       },
     });
     return routes;
+  }
+
+  createOnePlain(newRoute: PlainEntityWithoutId<Route>) {
+    return createOnePlain(this.repo, newRoute, 'route');
   }
 
   createOneWithRelations(newRoute: NewEntity<Route>) {

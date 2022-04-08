@@ -9,6 +9,7 @@ import {
   doesArraysIntersects,
   remapToIndexedObject,
 } from 'src/tools';
+import { DataValidatorUseCase } from '../dataValidator';
 
 @Injectable()
 export class ClientInitialHandshakeUseCase {
@@ -16,7 +17,8 @@ export class ClientInitialHandshakeUseCase {
     @InjectEntityManager()
     private readonly entityManager: EntityManager,
     private readonly eventRepo: repo.EventRepo,
-    private readonly encryptionUseCase: EncryptionUseCase,
+    private readonly encryptionUseCase: EncryptionUseCase, // needed for all encryption workers be ready at this moment
+    private readonly dataValidatorUseCase: DataValidatorUseCase, // needed for all data validators be ready at this moment
     private readonly clientRepo: repo.ClientRepo,
     private readonly eventParameterRepo: repo.EventParameterRepo,
     private readonly endpointRepo: repo.EndpointRepo,
@@ -182,8 +184,15 @@ export class ClientInitialHandshakeUseCase {
     if (validationErrors.length)
       throw new Error('InitHandshakeQuery: validation error');
 
+    // check if worker is existing
     const encryptionWorker =
       this.encryptionUseCase.getEncryptionWorker(encryptionWorkerUUID);
+
+    // check if all validators are existing
+    for (const { dataValidatorUUID } of initHandshakeQuery.supported
+      .eventParameters) {
+      this.dataValidatorUseCase.getValidator(dataValidatorUUID);
+    }
 
     if (
       !(await encryptionWorker.isClientSideHandshakeCredentialsValid(

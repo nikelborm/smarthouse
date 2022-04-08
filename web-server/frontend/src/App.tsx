@@ -1,4 +1,4 @@
-import { Route, Routes, Navigate, Outlet, useMatch } from 'react-router-dom';
+import { Route, Routes, Navigate, Outlet } from 'react-router-dom';
 import { AdminPanelWrapper } from 'components';
 import {
   Events,

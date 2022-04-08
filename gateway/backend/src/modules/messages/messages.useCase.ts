@@ -1,4 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
+import { plainToInstance } from 'class-transformer';
 import { differenceBetweenSetsInArray } from 'src/tools';
 import {
   AuthMessage,
@@ -37,6 +38,38 @@ export class MessagesUseCase {
       authedMessageCB: this.authedMessageCB,
       authedClientOfflineCB: this.authedClientOfflineCB,
     });
+  }
+
+  sendToManyClientsBy(
+    predicate: (client: model.Client) => boolean,
+    getEncryptedMessagesForMatchedClient: (
+      client: model.Client,
+    ) => Promise<string[]>,
+  ): void;
+  sendToManyClientsBy(
+    UUIDs: string[],
+    getEncryptedMessagesForMatchedClient: (
+      client: model.Client,
+    ) => Promise<string[]>,
+  ): void;
+  async sendToManyClientsBy(
+    UUIDsOrPredicate: string[] | ((client: model.Client) => boolean),
+    getEncryptedMessagesForMatchedClient: (
+      client: model.Client,
+    ) => Promise<string[]>,
+  ) {
+    return this.wsservice.sendToManyClientsBy(
+      UUIDsOrPredicate,
+      getEncryptedMessagesForMatchedClient,
+    );
+  }
+
+  getOnlineClientUUIDs() {
+    return this.wsservice.getOnlineClientUUIDs();
+  }
+
+  sendToClientBy(UUID: string, document: Record<string, any>) {
+    return this.wsservice.sendToClientBy(UUID, document);
   }
 
   private authRequestCB: AuthRequestCB = async (message) => {
@@ -86,10 +119,10 @@ export class MessagesUseCase {
       throw new Error('Message from authorized client: Validation error');
 
     const endpoint = client.endpoints.find(
-      ({ uuid }) => parsedMessage.endpointUUID === uuid,
+      ({ uuid }) => parsedMessage.sentFromEndpointUUID === uuid,
     );
 
-    await this.validateMessage(endpoint, parsedMessage);
+    await this.validateIncomingMessage(endpoint, parsedMessage);
 
     const dataConsumerEndpoints = await this.routeRepo.getManyRoutesBySource(
       endpoint.id,
@@ -110,11 +143,11 @@ export class MessagesUseCase {
         for (const { uuid: endpointUUID } of client.endpoints) {
           if (!dataConsumerEndpointUUIDs.has(endpointUUID)) continue;
 
-          const message: DecryptedRegularMessage = {
-            endpointUUID,
+          const message = plainToInstance(DecryptedRegularMessage, {
+            sentFromEndpointUUID: endpointUUID,
             messageUUID: parsedMessage.messageUUID,
             parameters: parsedMessage.parameters,
-          };
+          });
 
           // TODO: сюда кажется надо добавить как раз ту хуйню с сериализацией параметров
           // а может и не надо потому что мы по факту отправляем то что приняли и оно уже
@@ -139,13 +172,13 @@ export class MessagesUseCase {
     console.log(`Client ${client.uuid} disconnected`);
   };
 
-  private async validateMessage(
+  private async validateIncomingMessage(
     endpoint: model.Endpoint,
     parsedMessage: DecryptedRegularMessage,
   ) {
     if (!endpoint)
       throw new Error(
-        `Client does not have endpoint ${parsedMessage.endpointUUID} and cannot use it`,
+        `Client does not have endpoint ${parsedMessage.sentFromEndpointUUID} and cannot use it`,
       );
 
     const canClientSendMessageWithEndpoint =
@@ -155,7 +188,7 @@ export class MessagesUseCase {
 
     if (!canClientSendMessageWithEndpoint)
       throw new Error(
-        `Clients cannot send messages using not source endpoint ${parsedMessage.endpointUUID}`,
+        `Clients cannot send messages using not source endpoint ${parsedMessage.sentFromEndpointUUID}`,
       );
 
     const {
