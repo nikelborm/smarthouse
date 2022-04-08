@@ -1,6 +1,54 @@
 import React, { useContext, useState } from 'react';
 
-function getLocalStorageAuth() {
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+
+function getLocalStorageAuth():
+  | {
+      isAuthed: true;
+      authInfo: Record<string, any>;
+    }
+  | { isAuthed: false }
+  | null {
   let state;
   try {
     state = JSON.parse(localStorage.getItem('authed') as string);
@@ -10,11 +58,14 @@ function getLocalStorageAuth() {
   return state;
 }
 
-function setLocalStorageAuth(obj) {
-  // obg: {
-  //   isAuthed: Boolean,
-  //   authInfo: Object
-  // }
+function setLocalStorageAuth(
+  obj:
+    | {
+        isAuthed: true;
+        authInfo: Record<string, any>;
+      }
+    | { isAuthed: false }
+) {
   localStorage.setItem('authed', JSON.stringify(obj));
 }
 
@@ -27,7 +78,6 @@ function isObject(toCheck) {
 if (!getLocalStorageAuth()) {
   setLocalStorageAuth({
     isAuthed: false,
-    authInfo: {},
   });
 }
 
