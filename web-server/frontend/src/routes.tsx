@@ -1,7 +1,7 @@
 import { PieChartOutlined } from '@ant-design/icons';
 
 export enum RoutesEnum {
-  PROFILE = 'profile',
+  USERS = 'users',
   CLIENTS = 'clients',
   ROUTES_GRAPH = 'routesGraph',
   EVENTS = 'events',
@@ -16,10 +16,10 @@ export const routes: {
     icon?: React.ReactChild;
   };
 } = {
-  [RoutesEnum.PROFILE]: {
-    menuTitle: 'Profile',
-    pageTitle: 'Profile',
-    description: 'Настройки аккаунта',
+  [RoutesEnum.USERS]: {
+    menuTitle: 'Users',
+    pageTitle: 'Users',
+    description: 'Профили',
     icon: <PieChartOutlined />,
   },
   [RoutesEnum.CLIENTS]: {

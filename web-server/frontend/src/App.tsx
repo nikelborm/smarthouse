@@ -18,6 +18,7 @@ import { useAuthedUser } from 'utils/authContext';
 
 function App() {
   const { isAuthed } = useAuthedUser();
+  usePath();
   return (
     <Routes>
       <Route path="/" element={<Root />} />
