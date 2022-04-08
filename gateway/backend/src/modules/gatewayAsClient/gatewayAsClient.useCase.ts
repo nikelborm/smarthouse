@@ -4,6 +4,9 @@ import { GATEWAY_AS_CLIENT_INITIALIZER_KEY } from './gatewayAsClientInitializer.
 
 @Injectable()
 export class GatewayAsClientUseCase {
+  private readonly allEndpoinUUIDs: string[] = [];
+  private readonly busyEndpoinUUIDs: string[] = [];
+
   constructor(
     @Inject(GATEWAY_AS_CLIENT_INITIALIZER_KEY)
     gatewayAsClientInitializer,
@@ -16,4 +19,6 @@ export class GatewayAsClientUseCase {
   getAllEndpointsUUIDs() {
     return [];
   }
+
+  onEndpoint;
 }
