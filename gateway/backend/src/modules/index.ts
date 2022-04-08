@@ -4,7 +4,7 @@ export * from './dataValidator';
 export * from './encryption';
 export * from './event';
 export * from './eventParameter';
-export * from './gatewayEndpoints';
+export * from './gatewayAsClient';
 export * from './infrastructure';
 export * from './messages';
 export * from './route';
