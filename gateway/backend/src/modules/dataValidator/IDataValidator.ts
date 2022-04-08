@@ -1,3 +1,5 @@
+export type SerializedIntoJsonData = any;
+
 export interface IDataValidator<T> {
   readonly uuid: string;
 

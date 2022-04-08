@@ -40,18 +40,6 @@ export class WebsocketService {
     if (!wasClientFound) throw new Error('Client does not connected to server');
   }
 
-  sendToManyClientsBy(
-    predicate: (client: model.Client) => boolean,
-    getEncryptedMessagesForMatchedClient: (
-      client: model.Client,
-    ) => Promise<string[]>,
-  ): void;
-  sendToManyClientsBy(
-    UUIDs: string[],
-    getEncryptedMessagesForMatchedClient: (
-      client: model.Client,
-    ) => Promise<string[]>,
-  ): void;
   async sendToManyClientsBy(
     UUIDsOrPredicate: string[] | ((client: model.Client) => boolean),
     getEncryptedMessagesForMatchedClient: (
@@ -70,13 +58,13 @@ export class WebsocketService {
     }
 
     for (const connection of this.server.clients) {
-      if (predicate(connection)) {
-        const encryptedMessages = await getEncryptedMessagesForMatchedClient(
-          connection.client,
-        );
+      if (!predicate(connection)) continue;
 
-        encryptedMessages.forEach((message) => connection.send(message));
-      }
+      const encryptedMessages = await getEncryptedMessagesForMatchedClient(
+        connection.client,
+      );
+
+      encryptedMessages.forEach((message) => connection.send(message));
     }
   }
 

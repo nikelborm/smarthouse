@@ -33,6 +33,23 @@ export class EndpointRepo {
     return endpoint;
   }
 
+  async getManyWithOnlyUUIDsByClientUUID(clientUUID: string) {
+    const endpoints = await this.repo.find({
+      select: {
+        uuid: true,
+      },
+      relations: {
+        client: true,
+      },
+      where: {
+        client: {
+          uuid: clientUUID,
+        },
+      },
+    });
+    return endpoints;
+  }
+
   createManyPlainInTransaction(
     newEndpoints: PlainEntityWithoutId<Endpoint>[],
     transactionManager: EntityManager,

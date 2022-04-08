@@ -9,7 +9,9 @@ import {
   IsUUID,
   validateSync,
   ValidateNested,
+  isUUID,
 } from 'class-validator';
+import type { SerializedIntoJsonData } from 'src/modules/dataValidator/IDataValidator';
 
 export class BaseMessageReport {
   @IsBoolean()
@@ -38,7 +40,7 @@ export class MessageParameter {
   uuid: string;
 
   @IsDefined()
-  value: string;
+  value: SerializedIntoJsonData;
 }
 
 export class DecryptedRegularMessage {
@@ -46,12 +48,27 @@ export class DecryptedRegularMessage {
   messageUUID: string;
 
   @IsUUID('4')
-  endpointUUID: string;
+  sentFromEndpointUUID: string;
 
   @IsOptional()
   @ValidateNested({ each: true })
   @Type(() => MessageParameter)
   parameters?: MessageParameter[];
+
+  getParameterValueBy(uuid: string) {
+    if (!isUUID(uuid))
+      throw new Error(
+        'DecryptedRegularMessage getParameterValueBy: function parameter should be uuid',
+      );
+    const parameter = this.parameters.find((param) => param.uuid === uuid);
+
+    if (!parameter)
+      throw new Error(
+        'DecryptedRegularMessage getParameterValueBy: function parameter should be uuid',
+      );
+
+    return parameter.value;
+  }
 }
 
 const validateConfig = {

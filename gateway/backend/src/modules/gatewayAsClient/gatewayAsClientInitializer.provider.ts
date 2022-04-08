@@ -1,5 +1,5 @@
-import { DataValidatorUseCase } from '../dataValidator';
-import { EncryptionUseCase } from '../encryption';
+import { ConfigService } from '@nestjs/config';
+import { repo } from '../infrastructure';
 
 export const GATEWAY_AS_CLIENT_INITIALIZER_KEY = Symbol(
   'gatewayAsClientInitializerKey',
@@ -7,9 +7,17 @@ export const GATEWAY_AS_CLIENT_INITIALIZER_KEY = Symbol(
 
 export const GatewayAsClientInitializer = {
   provide: GATEWAY_AS_CLIENT_INITIALIZER_KEY,
-  useFactory: async () => {
-    console.log('GatewayAsClientInitializer factory');
-    return {};
+  useFactory: async (
+    endpointRepo: repo.EndpointRepo,
+    configService: ConfigService,
+  ) => {
+    const endopintUUIDsRegisteredInDB = (
+      await endpointRepo.getManyWithOnlyUUIDsByClientUUID(
+        configService.get('gatewayUUID'),
+      )
+    ).map(({ uuid }) => uuid);
+
+    return endopintUUIDsRegisteredInDB;
   },
-  inject: [EncryptionUseCase, DataValidatorUseCase],
+  inject: [repo.EndpointRepo, ConfigService],
 };
