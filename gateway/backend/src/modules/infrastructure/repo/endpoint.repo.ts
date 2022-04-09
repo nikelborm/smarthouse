@@ -1,6 +1,7 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { messages } from 'src/config';
+import type { EndpointToUseAsSource } from 'src/modules/messages';
 import {
   createManyPlain,
   PlainEntityWithoutId,
@@ -29,6 +30,43 @@ export class EndpointRepo {
     if (!endpoint)
       throw new BadRequestException(
         messages.repo.common.cantGetNotFoundById('endpoint', id),
+      );
+    return endpoint;
+  }
+
+  async getOneByUUID(uuid: string): Promise<EndpointToUseAsSource> {
+    const endpoint = await this.repo.findOne({
+      where: { uuid },
+      select: {
+        id: true,
+        uuid: true,
+        type: true,
+        event: {
+          id: true,
+          uuid: true,
+          type: true,
+          parameterAssociations: {
+            id: true,
+            eventParameter: {
+              id: true,
+              uuid: true,
+              dataValidatorUUID: true,
+            },
+            isParameterRequired: true,
+          },
+        },
+      },
+      relations: {
+        event: {
+          parameterAssociations: {
+            eventParameter: true,
+          },
+        },
+      },
+    });
+    if (!endpoint)
+      throw new BadRequestException(
+        messages.repo.common.cantGetNotFoundByUUID('endpoint', uuid),
       );
     return endpoint;
   }

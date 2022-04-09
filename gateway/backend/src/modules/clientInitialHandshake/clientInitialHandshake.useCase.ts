@@ -72,16 +72,18 @@ export class ClientInitialHandshakeUseCase {
       ...event
     } of handshakeRequest.supported.events) {
       eventToParameterAssociationsToInsert.push(
-        ...optionalParameterUUIDs.map((uuid) => ({
-          eventParameterUUID: uuid,
-          eventUUID: event.uuid,
-          isParameterRequired: false,
-        })),
-        ...requiredParameterUUIDs.map((uuid) => ({
-          eventParameterUUID: uuid,
-          eventUUID: event.uuid,
-          isParameterRequired: true,
-        })),
+        ...[
+          ...optionalParameterUUIDs.map((uuid) => ({
+            eventParameterUUID: uuid,
+            eventUUID: event.uuid,
+            isParameterRequired: false,
+          })),
+          ...requiredParameterUUIDs.map((uuid) => ({
+            eventParameterUUID: uuid,
+            eventUUID: event.uuid,
+            isParameterRequired: true,
+          })),
+        ],
       );
       eventsToInsert.push(event);
     }

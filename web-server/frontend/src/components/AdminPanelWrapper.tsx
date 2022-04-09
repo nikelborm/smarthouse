@@ -47,7 +47,7 @@ export function AdminPanelWrapper() {
           </div>
         </Content>
         <Footer style={{ textAlign: 'center' }}>
-          Made for Devexperts with ❤️ by nikelborm
+          Smarthouse made with ❤️ by 3rd team
         </Footer>
       </Layout>
     </Layout>

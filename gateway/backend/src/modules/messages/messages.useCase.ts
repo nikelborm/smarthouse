@@ -1,16 +1,20 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { plainToInstance } from 'class-transformer';
+import { isUUID } from 'class-validator';
 import { differenceBetweenSetsInArray } from 'src/tools';
 import {
   AuthMessage,
   DecryptedRegularMessage,
   EndpointType,
   EventType,
+  SupportedEventsParamsEndpoints,
   validate,
 } from 'src/types';
+import { EventEmitter } from 'stream';
 import { DataValidatorUseCase } from '../dataValidator';
 import { EncryptionUseCase } from '../encryption';
 import { model, repo } from '../infrastructure';
+import { GATEWAY_AS_CLIENT_INITIALIZER_KEY } from './gatewayAsClientInitializer.provider';
 import {
   WebsocketService,
   AuthedMessageCB,
@@ -25,6 +29,10 @@ import {
 @Injectable()
 export class MessagesUseCase {
   private readonly wsservice: WebsocketService;
+  private readonly gatewayReceiverEmitter = new EventEmitter();
+  private readonly allEndpoinUUIDs: string[] = [];
+  private readonly busyEndpoinUUIDs: string[] = [];
+
   private readonly messagesWaitingForResponseStore = new Map<
     string, // `${messageUUID}${sinkEndpointUUID}`
     { sourceEndpointUUID: string }
@@ -37,12 +45,36 @@ export class MessagesUseCase {
     private readonly encryptionUseCase: EncryptionUseCase,
     @Inject(WEBSOCKET_SERVICE_FACTORY_KEY)
     private readonly websocketServiceFactory: IWebsocketServiceFactory,
+    @Inject(GATEWAY_AS_CLIENT_INITIALIZER_KEY)
+    private readonly allowedEndpointsUUIDs: string[],
   ) {
     this.wsservice = this.websocketServiceFactory.create({
       authRequestCB: this.authRequestCB,
       authedMessageCB: this.authedMessageCB,
       authedClientOfflineCB: this.authedClientOfflineCB,
     });
+  }
+
+  registerEndpointOfGateway(
+    endpoinUUID: string,
+    handler: (message: DecryptedRegularMessage) => void,
+  ) {
+    if (!isUUID(endpoinUUID))
+      throw new Error(
+        'GatewayAsClientUseCase registerEndpointOfGateway: endpoinUUID should be UUID string',
+      );
+
+    if (this.gatewayReceiverEmitter.eventNames().includes(endpoinUUID))
+      throw new Error(
+        `GatewayAsClientUseCase registerEndpointOfGateway: handler for endpoinUUID ${endpoinUUID} already registered`,
+      );
+
+    if (!this.allowedEndpointsUUIDs.includes(endpoinUUID))
+      throw new Error(
+        `GatewayAsClientUseCase registerEndpointOfGateway: endpoinUUID ${endpoinUUID} does not exist in the database`,
+      );
+
+    this.gatewayReceiverEmitter.on(endpoinUUID, handler);
   }
 
   sendToManyClientsBy(
@@ -75,7 +107,7 @@ export class MessagesUseCase {
 
   async emitNewMessage(
     parsedMessage: DecryptedRegularMessage,
-    endpointToUseAsSource: model.Endpoint,
+    endpointToUseAsSource: EndpointToUseAsSource,
   ) {
     const validationErrors = validate(parsedMessage, DecryptedRegularMessage);
     if (validationErrors.length)
@@ -92,17 +124,21 @@ export class MessagesUseCase {
         const { sourceEndpointUUID } =
           this.messagesWaitingForResponseStore.get(messageTag);
 
+        const message = plainToInstance(DecryptedRegularMessage, {
+          endpointUUID: sourceEndpointUUID,
+          messageUUID: parsedMessage.messageUUID,
+          parameters: parsedMessage.parameters,
+          replyForMessageUUID: parsedMessage.replyForMessageUUID,
+        });
+
+        this.gatewayReceiverEmitter.emit(sourceEndpointUUID, message);
+
         await this.wsservice.sendToClientsBy(
           ({ endpoints }) =>
             endpoints.some(({ uuid }) => sourceEndpointUUID === uuid),
 
           async (clientReceiver) => [
-            await this.encryptMessage(clientReceiver, {
-              endpointUUID: sourceEndpointUUID,
-              messageUUID: parsedMessage.messageUUID,
-              parameters: parsedMessage.parameters,
-              replyForMessageUUID: parsedMessage.replyForMessageUUID,
-            }),
+            await this.encryptMessage(clientReceiver, message),
           ],
 
           { untilFirstMatch: true },
@@ -119,6 +155,7 @@ export class MessagesUseCase {
     const dataConsumerEndpoints = await this.routeRepo.getManyRoutesBy({
       sourceEndpointId: endpointToUseAsSource.id,
     });
+    console.log('dataConsumerEndpoints: ', dataConsumerEndpoints);
 
     const dataConsumerClientIds = new Set(
       dataConsumerEndpoints.map(({ sinkEndpoint: { clientId } }) => clientId),
@@ -127,7 +164,27 @@ export class MessagesUseCase {
     const dataConsumerEndpointUUIDs = new Set(
       dataConsumerEndpoints.map(({ sinkEndpoint: { uuid } }) => uuid),
     );
-
+    dataConsumerEndpointUUIDs.forEach((receiverEndpointUUID) => {
+      const result = this.gatewayReceiverEmitter.emit(
+        receiverEndpointUUID,
+        plainToInstance(DecryptedRegularMessage, {
+          endpointUUID: receiverEndpointUUID,
+          messageUUID: parsedMessage.messageUUID,
+          parameters: parsedMessage.parameters,
+        }),
+      );
+      if (
+        result &&
+        endpointToUseAsSource.event.type === EventType.QUERY &&
+        endpointToUseAsSource.type === EndpointType.EVENT_SOURCE
+      )
+        this.messagesWaitingForResponseStore.set(
+          `${parsedMessage.messageUUID}${receiverEndpointUUID}`,
+          {
+            sourceEndpointUUID: endpointToUseAsSource.uuid,
+          },
+        );
+    });
     await this.wsservice.sendToClientsBy(
       ({ id }) => dataConsumerClientIds.has(id),
       async (clientReceiver) => {
@@ -135,11 +192,14 @@ export class MessagesUseCase {
         for (const { uuid: receiverEndpointUUID } of clientReceiver.endpoints) {
           if (!dataConsumerEndpointUUIDs.has(receiverEndpointUUID)) continue;
 
-          const message: DecryptedRegularMessage = {
-            endpointUUID: receiverEndpointUUID,
-            messageUUID: parsedMessage.messageUUID,
-            parameters: parsedMessage.parameters,
-          };
+          const message: DecryptedRegularMessage = plainToInstance(
+            DecryptedRegularMessage,
+            {
+              endpointUUID: receiverEndpointUUID,
+              messageUUID: parsedMessage.messageUUID,
+              parameters: parsedMessage.parameters,
+            },
+          );
 
           if (
             endpointToUseAsSource.event.type === EventType.QUERY &&
@@ -202,6 +262,7 @@ export class MessagesUseCase {
       clientSender.encryptionWorkerCredentials,
       message.toString(),
     );
+    console.log('jsonString: ', jsonString);
 
     const parsedMessage: DecryptedRegularMessage = JSON.parse(jsonString);
     console.log('authedMessageCB parsedMessage: ', parsedMessage);
@@ -214,7 +275,7 @@ export class MessagesUseCase {
   };
 
   private authedClientOfflineCB: OnlineStatusChangedCB = async (client) => {
-    console.log(`Client ${client.uuid} disconnected`);
+    console.log(`Client ${client?.uuid} disconnected`);
   };
 
   private encryptMessage(
@@ -230,7 +291,7 @@ export class MessagesUseCase {
   }
 
   private async validateIncomingMessage(
-    endpointToUseAsSource: model.Endpoint,
+    endpointToUseAsSource: EndpointToUseAsSource,
     parsedMessage: DecryptedRegularMessage,
   ) {
     if (!endpointToUseAsSource)
@@ -250,7 +311,28 @@ export class MessagesUseCase {
 
     if (!canClientSendMessageWithEndpoint)
       throw new Error(
-        `Clients cannot send messages using not source endpoint ${parsedMessage.endpointUUID}`,
+        `Clients cannot send messages using endpoint ${parsedMessage.endpointUUID} with event type not equal to source`,
+      );
+
+    if (
+      endpointToUseAsSource.type === EndpointType.EVENT_SOURCE &&
+      endpointToUseAsSource.event.type === EventType.QUERY &&
+      DecryptedRegularMessage.prototype.getParameterValueBy.call(
+        parsedMessage,
+        SupportedEventsParamsEndpoints.JSON_RESPONSE_PARAMETER,
+      )
+    )
+      throw new Error(
+        `Client cannot set "replyForMessageUUID" field when they are using query source endpoint ${parsedMessage.endpointUUID}`,
+      );
+
+    if (
+      endpointToUseAsSource.type === EndpointType.EVENT_SINK &&
+      endpointToUseAsSource.event.type === EventType.QUERY &&
+      !parsedMessage.replyForMessageUUID
+    )
+      throw new Error(
+        `Client must set "replyForMessageUUID" field when they are using query sink endpoint ${parsedMessage.endpointUUID}`,
       );
 
     if (
@@ -274,6 +356,7 @@ export class MessagesUseCase {
     const {
       event: { parameterAssociations },
     } = endpointToUseAsSource;
+    console.log('parameterAssociations: ', parameterAssociations);
 
     const requiredEventParametersUUIDs = parameterAssociations
       .filter(({ isParameterRequired }) => isParameterRequired)
@@ -294,9 +377,14 @@ export class MessagesUseCase {
     const allMessageParametersUUIDs = parsedMessage.parameters.map(
       ({ uuid }) => uuid,
     );
+    console.log('allMessageParametersUUIDs: ', allMessageParametersUUIDs);
 
     const messageParametersUUIDsWithoutDuplicates = new Set(
       allMessageParametersUUIDs,
+    );
+    console.log(
+      'messageParametersUUIDsWithoutDuplicates: ',
+      messageParametersUUIDsWithoutDuplicates,
     );
 
     if (
@@ -307,6 +395,11 @@ export class MessagesUseCase {
 
     const redundantParametersUUIDs = differenceBetweenSetsInArray(
       messageParametersUUIDsWithoutDuplicates,
+      new Set(allEventParametersUUIDs),
+    );
+    console.log('redundantParametersUUIDs: ', redundantParametersUUIDs);
+    console.log(
+      'new Set(allEventParametersUUIDs): ',
       new Set(allEventParametersUUIDs),
     );
 
@@ -327,12 +420,10 @@ export class MessagesUseCase {
 
     const paramToValidator = Object.fromEntries(
       parameterAssociations.map(
-        ({
-          eventParameter: {
-            uuid: parameterUUID,
-            dataValidator: { uuid: validatorUUID },
-          },
-        }) => [parameterUUID, validatorUUID],
+        ({ eventParameter: { uuid: parameterUUID, dataValidatorUUID } }) => [
+          parameterUUID,
+          dataValidatorUUID,
+        ],
       ),
     );
 
@@ -344,3 +435,22 @@ export class MessagesUseCase {
     }
   }
 }
+
+export type EndpointToUseAsSource = {
+  id: number;
+  uuid: string;
+  type: EndpointType;
+  event: {
+    id: number;
+    uuid: string;
+    type: EventType;
+    parameterAssociations: {
+      eventParameter: {
+        id: number;
+        uuid: string;
+        dataValidatorUUID: string;
+      };
+      isParameterRequired: boolean;
+    }[];
+  };
+};

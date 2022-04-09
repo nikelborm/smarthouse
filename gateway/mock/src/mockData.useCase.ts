@@ -149,6 +149,12 @@ export class MockDataUseCase {
       supported: {
         eventParameters: [
           {
+            uuid: '67f6bbd6-e0f6-4427-aeb2-c12c4ac6d9ff',
+            name: 'JSON response',
+            dataValidatorUUID: '2a07c01f-ebb9-4f47-97e4-be09142e16af',
+            measurementUnit: '-----',
+          },
+          {
             uuid: '3ec4f1b4-8b65-4fe2-b777-d8df4ce03eac',
             name: 'UUID сущности',
             dataValidatorUUID: '55912e8f-dcf8-4e8a-8816-a0e33c4c4366',
@@ -207,6 +213,7 @@ export class MockDataUseCase {
             optionalParameterUUIDs: [
               '9ac7f810-eabc-43bc-a714-e6f48b736d7c',
               '715622d1-7866-466e-9786-49c8ef2e93f9',
+              '67f6bbd6-e0f6-4427-aeb2-c12c4ac6d9ff',
             ],
             hexColor: '1abd23',
           },
@@ -229,7 +236,7 @@ export class MockDataUseCase {
               '3ec4f1b4-8b65-4fe2-b777-d8df4ce03eac',
               '4491eaf5-9f95-489d-9493-5af8e75cbf76',
             ],
-            optionalParameterUUIDs: [],
+            optionalParameterUUIDs: ['67f6bbd6-e0f6-4427-aeb2-c12c4ac6d9ff'],
             hexColor: '1abd23',
           },
           {
@@ -238,7 +245,7 @@ export class MockDataUseCase {
             description: '-----',
             type: EventType.QUERY,
             requiredParameterUUIDs: [],
-            optionalParameterUUIDs: [],
+            optionalParameterUUIDs: ['67f6bbd6-e0f6-4427-aeb2-c12c4ac6d9ff'],
             hexColor: '1abd23',
           },
           {
@@ -275,7 +282,7 @@ export class MockDataUseCase {
             description: '-----',
             type: EventType.QUERY,
             requiredParameterUUIDs: [],
-            optionalParameterUUIDs: [],
+            optionalParameterUUIDs: ['67f6bbd6-e0f6-4427-aeb2-c12c4ac6d9ff'],
             hexColor: '1abd23',
           },
           {
@@ -294,7 +301,7 @@ export class MockDataUseCase {
             description: '-----',
             type: EventType.QUERY,
             requiredParameterUUIDs: [],
-            optionalParameterUUIDs: [],
+            optionalParameterUUIDs: ['67f6bbd6-e0f6-4427-aeb2-c12c4ac6d9ff'],
             hexColor: '1abd23',
           },
           {
@@ -447,6 +454,12 @@ export class MockDataUseCase {
       supported: {
         eventParameters: [
           {
+            uuid: '67f6bbd6-e0f6-4427-aeb2-c12c4ac6d9ff',
+            name: 'JSON response',
+            dataValidatorUUID: '2a07c01f-ebb9-4f47-97e4-be09142e16af',
+            measurementUnit: '-----',
+          },
+          {
             uuid: '3ec4f1b4-8b65-4fe2-b777-d8df4ce03eac',
             name: 'UUID сущности',
             dataValidatorUUID: '55912e8f-dcf8-4e8a-8816-a0e33c4c4366',
@@ -505,6 +518,7 @@ export class MockDataUseCase {
             optionalParameterUUIDs: [
               '9ac7f810-eabc-43bc-a714-e6f48b736d7c',
               '715622d1-7866-466e-9786-49c8ef2e93f9',
+              '67f6bbd6-e0f6-4427-aeb2-c12c4ac6d9ff',
             ],
             hexColor: '1abd23',
           },
@@ -527,7 +541,7 @@ export class MockDataUseCase {
               '3ec4f1b4-8b65-4fe2-b777-d8df4ce03eac',
               '4491eaf5-9f95-489d-9493-5af8e75cbf76',
             ],
-            optionalParameterUUIDs: [],
+            optionalParameterUUIDs: ['67f6bbd6-e0f6-4427-aeb2-c12c4ac6d9ff'],
             hexColor: '1abd23',
           },
           {
@@ -536,7 +550,7 @@ export class MockDataUseCase {
             description: '-----',
             type: EventType.QUERY,
             requiredParameterUUIDs: [],
-            optionalParameterUUIDs: [],
+            optionalParameterUUIDs: ['67f6bbd6-e0f6-4427-aeb2-c12c4ac6d9ff'],
             hexColor: '1abd23',
           },
           {
@@ -573,7 +587,7 @@ export class MockDataUseCase {
             description: '-----',
             type: EventType.QUERY,
             requiredParameterUUIDs: [],
-            optionalParameterUUIDs: [],
+            optionalParameterUUIDs: ['67f6bbd6-e0f6-4427-aeb2-c12c4ac6d9ff'],
             hexColor: '1abd23',
           },
           {
@@ -592,7 +606,7 @@ export class MockDataUseCase {
             description: '-----',
             type: EventType.QUERY,
             requiredParameterUUIDs: [],
-            optionalParameterUUIDs: [],
+            optionalParameterUUIDs: ['67f6bbd6-e0f6-4427-aeb2-c12c4ac6d9ff'],
             hexColor: '1abd23',
           },
           {
