@@ -43,28 +43,25 @@ export class RouteRepo {
     sourceEndpointId?: number;
     sinkEndpointId?: number;
   }) {
+    console.log('getManyRoutesBy');
     const routes = await this.repo.find({
       where: {
         ...(sourceEndpointId && { sourceEndpointId }),
         ...(sinkEndpointId && { sinkEndpointId }),
       },
       select: {
-        ...(sourceEndpointId && {
-          sourceEndpoint: {
-            uuid: true,
-            clientId: true,
-          },
-        }),
-        ...(sinkEndpointId && {
-          sinkEndpoint: {
-            uuid: true,
-            clientId: true,
-          },
-        }),
+        sinkEndpoint: {
+          uuid: true,
+          clientId: true,
+        },
+        sourceEndpoint: {
+          uuid: true,
+          clientId: true,
+        },
       },
       relations: {
-        ...(sourceEndpointId && { sourceEndpointId: true }),
-        ...(sinkEndpointId && { sinkEndpointId: true }),
+        sourceEndpoint: true,
+        sinkEndpoint: true,
       },
     });
     return routes;

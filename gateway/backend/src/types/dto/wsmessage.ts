@@ -52,7 +52,7 @@ export class DecryptedRegularMessage {
 
   @IsOptional()
   @IsUUID('4')
-  replyForMessageUUID?: MessageParameter[];
+  replyForMessageUUID?: string;
 
   @IsOptional()
   @ValidateNested({ each: true })
@@ -65,10 +65,9 @@ export class DecryptedRegularMessage {
         'DecryptedRegularMessage getParameterValueBy: function parameter should be uuid',
       );
 
-    const parameter =
-      this.parameters.find((param) => param.uuid === uuid) || null;
+    const parameter = this.parameters?.find((param) => param.uuid === uuid);
 
-    return parameter.value;
+    return parameter?.value || null;
   }
 }
 

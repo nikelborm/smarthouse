@@ -18,6 +18,12 @@
         "measurementUnit": "-----"
       },
       {
+        "uuid": "67f6bbd6-e0f6-4427-aeb2-c12c4ac6d9ff",
+        "name": "JSON response",
+        "dataValidatorUUID": "2a07c01f-ebb9-4f47-97e4-be09142e16af",
+        "measurementUnit": "-----"
+      },
+      {
         "uuid": "715622d1-7866-466e-9786-49c8ef2e93f9",
         "name": "ID выходного эндпоинта",
         "dataValidatorUUID": "dafb84cc-8e4d-45a2-9dac-41067be67b89",
@@ -69,7 +75,8 @@
         "requiredParameterUUIDs": [],
         "optionalParameterUUIDs": [
           "9ac7f810-eabc-43bc-a714-e6f48b736d7c",
-          "715622d1-7866-466e-9786-49c8ef2e93f9"
+          "715622d1-7866-466e-9786-49c8ef2e93f9",
+          "67f6bbd6-e0f6-4427-aeb2-c12c4ac6d9ff"
         ],
         "hexColor": "1abd23"
       },
@@ -92,7 +99,7 @@
           "3ec4f1b4-8b65-4fe2-b777-d8df4ce03eac",
           "4491eaf5-9f95-489d-9493-5af8e75cbf76"
         ],
-        "optionalParameterUUIDs": [],
+        "optionalParameterUUIDs": ["67f6bbd6-e0f6-4427-aeb2-c12c4ac6d9ff"],
         "hexColor": "1abd23"
       },
       {
@@ -101,7 +108,7 @@
         "description": "-----",
         "type": "query",
         "requiredParameterUUIDs": [],
-        "optionalParameterUUIDs": [],
+        "optionalParameterUUIDs": ["67f6bbd6-e0f6-4427-aeb2-c12c4ac6d9ff"],
         "hexColor": "1abd23"
       },
       {
@@ -138,7 +145,7 @@
         "description": "-----",
         "type": "query",
         "requiredParameterUUIDs": [],
-        "optionalParameterUUIDs": [],
+        "optionalParameterUUIDs": ["67f6bbd6-e0f6-4427-aeb2-c12c4ac6d9ff"],
         "hexColor": "1abd23"
       },
       {
@@ -157,7 +164,7 @@
         "description": "-----",
         "type": "query",
         "requiredParameterUUIDs": [],
-        "optionalParameterUUIDs": [],
+        "optionalParameterUUIDs": ["67f6bbd6-e0f6-4427-aeb2-c12c4ac6d9ff"],
         "hexColor": "1abd23"
       },
       {

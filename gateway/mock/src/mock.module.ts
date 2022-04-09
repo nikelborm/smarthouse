@@ -12,9 +12,7 @@ import {
   ClientManagementModule,
   EventModule,
   EventParameterModule,
-  GatewayAsClientModule,
   MessagesModule,
-  RouteModule,
   DataValidatorModule,
   EncryptionModule,
 } from 'src/modules';

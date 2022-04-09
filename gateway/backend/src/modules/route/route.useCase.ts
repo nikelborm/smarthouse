@@ -3,20 +3,24 @@ import {
   DecryptedRegularMessage,
   SupportedEventsParamsEndpoints,
 } from 'src/types';
-import { GatewayAsClientUseCase } from '../gatewayAsClient';
 import { repo } from '../infrastructure';
 import { MessagesUseCase } from '../messages';
+import { v4 as uuidv4 } from 'uuid';
 
 @Injectable()
 export class RouteUseCase {
   constructor(
+    private readonly endpointRepo: repo.EndpointRepo,
     private readonly routeRepo: repo.RouteRepo,
-    private readonly gatewayAsClientUseCase: GatewayAsClientUseCase,
     private readonly messagesUseCase: MessagesUseCase,
   ) {
-    gatewayAsClientUseCase.registerEndpointOfGateway(
+    messagesUseCase.registerEndpointOfGateway(
       SupportedEventsParamsEndpoints.CREATE_ROUTE_ENDPOINT,
-      this.createRouteEndpointMessageHandler,
+      this.createRouteEndpointMessageHandler.bind(this),
+    );
+    messagesUseCase.registerEndpointOfGateway(
+      SupportedEventsParamsEndpoints.GET_ROUTES_ENDPOINT,
+      this.getRoutesMessageHandler.bind(this),
     );
   }
 
@@ -44,11 +48,27 @@ export class RouteUseCase {
       SupportedEventsParamsEndpoints.ROUTE_OUTCOMING_ENDPOINT_ID_PARAMETER,
     );
 
-    await this.routeRepo.getManyRoutesBy({
+    const value = await this.routeRepo.getManyRoutesBy({
       sinkEndpointId,
       sourceEndpointId,
     });
 
-    // await this.messagesUseCase.sendToClientBy();
+    await this.messagesUseCase.emitNewMessage(
+      {
+        endpointUUID: SupportedEventsParamsEndpoints.GET_ROUTES_ENDPOINT,
+        replyForMessageUUID: message.messageUUID,
+        messageUUID: uuidv4(),
+        parameters: [
+          ...(message.parameters || []),
+          {
+            uuid: SupportedEventsParamsEndpoints.JSON_RESPONSE_PARAMETER,
+            value: JSON.stringify(value),
+          },
+        ],
+      },
+      await this.endpointRepo.getOneByUUID(
+        SupportedEventsParamsEndpoints.GET_ROUTES_ENDPOINT,
+      ),
+    );
   }
 }

@@ -50,6 +50,7 @@ export class ClientRepo {
             uuid: true,
             type: true,
             parameterAssociations: {
+              id: true,
               eventParameter: {
                 id: true,
                 uuid: true,
