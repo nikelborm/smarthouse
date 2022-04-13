@@ -4,51 +4,143 @@ import createEngine, {
   DefaultNodeModel,
   DiagramModel,
 } from '@projectstorm/react-diagrams';
-
 import { CanvasWidget } from '@projectstorm/react-canvas-core';
+import styled from 'styled-components';
 
-const engine = createEngine();
+export const Toolbar = styled.div`
+  padding: 5px;
+  display: flex;
+  flex-shrink: 0;
+`;
 
+export const Content = styled.div`
+  flex-grow: 1;
+  height: 100%;
+`;
+export interface DemoWorkspaceWidgetProps {
+  buttons?: any;
+}
+export const AContainer = styled.div`
+  background: black;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  border-radius: 5px;
+  overflow: hidden;
+`;
+
+export const DemoButton = styled.button`
+  background: rgb(60, 60, 60);
+  font-size: 14px;
+  padding: 5px 10px;
+  border: none;
+  color: white;
+  outline: none;
+  cursor: pointer;
+  margin: 2px;
+  border-radius: 3px;
+
+  &:hover {
+    background: rgb(0, 192, 255);
+  }
+`;
+
+export interface DemoCanvasWidgetProps {
+  color?: string;
+  background?: string;
+}
+
+export const Container = styled.div<{ color: string; background: string }>`
+  height: 100%;
+  background-color: ${(p) => p.background};
+  background-size: 50px 50px;
+  display: flex;
+
+  > * {
+    height: 100%;
+    min-height: 100%;
+    width: 100%;
+  }
+
+  background-image: linear-gradient(
+      0deg,
+      transparent 24%,
+      ${(p) => p.color} 25%,
+      ${(p) => p.color} 26%,
+      transparent 27%,
+      transparent 74%,
+      ${(p) => p.color} 75%,
+      ${(p) => p.color} 76%,
+      transparent 77%,
+      transparent
+    ),
+    linear-gradient(
+      90deg,
+      transparent 24%,
+      ${(p) => p.color} 25%,
+      ${(p) => p.color} 26%,
+      transparent 27%,
+      transparent 74%,
+      ${(p) => p.color} 75%,
+      ${(p) => p.color} 76%,
+      transparent 77%,
+      transparent
+    );
+`;
+
+export class DemoCanvasWidget extends React.Component<DemoCanvasWidgetProps> {
+  render() {
+    return (
+      <>
+        <Container
+          background={this.props.background || 'rgb(60, 60, 60)'}
+          color={this.props.color || 'rgba(255,255,255, 0.05)'}
+          style={{
+            width: '500px',
+            height: '500px',
+          }}
+        >
+          {this.props.children}
+        </Container>
+      </>
+    );
+  }
+}
 export const RoutesGraph = () => {
-  const response = JSON.parse(
-    `{
-      "endpointUUID": "638bca8f-6f98-406a-bbad-0602bab08426",
-      "messageUUID": "3f219b5b-f5b5-40e6-aac2-817c50c71b68",
-      "parameters": [
-        {
-          "uuid": "67f6bbd6-e0f6-4427-aeb2-c12c4ac6d9ff",
-          "value": "[{\\"id\\":1,\\"sourceEndpointId\\":19,\\"sinkEndpointId\\":6,\\"createdAt\\":\\"2022-04-09T03:00:10.024Z\\",\\"updatedAt\\":\\"2022-04-09T03:00:10.024Z\\",\\"sourceEndpoint\\":{\\"uuid\\":\\"70da3236-e82a-4869-9b2d-51e2fc3cdc17\\",\\"clientId\\":3},\\"sinkEndpoint\\":{\\"uuid\\":\\"18ebc545-5c33-42da-b879-48adac946ef5\\",\\"clientId\\":2}},{\\"id\\":2,\\"sourceEndpointId\\":21,\\"sinkEndpointId\\":8,\\"createdAt\\":\\"2022-04-09T03:10:31.281Z\\",\\"updatedAt\\":\\"2022-04-09T03:10:31.281Z\\",\\"sourceEndpoint\\":{\\"uuid\\":\\"638bca8f-6f98-406a-bbad-0602bab08426\\",\\"clientId\\":3},\\"sinkEndpoint\\":{\\"uuid\\":\\"2def646b-e7e5-40e5-a94c-9253b942dce4\\",\\"clientId\\":2}}]"
-        }
-      ],
-      "replyForMessageUUID": "97141be5-402c-4300-85c9-148bea3f7a4f"
-    }
-    `
-  );
-  console.log(
-    'response.parameters[0].value: ',
-    JSON.parse(response.parameters[0].value)
-  );
+  const engine = createEngine();
+
+  const model = new DiagramModel();
 
   const node1 = new DefaultNodeModel({
     name: 'Node 1',
     color: 'rgb(0,192,255)',
   });
-  node1.setPosition(100, 100);
-  const port1 = node1.addOutPort('Out');
 
-  // node 2
-  const node2 = new DefaultNodeModel({
-    name: 'Node 1',
+  node1.setPosition(100, 100);
+
+  const node3 = new DefaultNodeModel({
+    name: 'Node 3',
     color: 'rgb(0,192,255)',
   });
-  node2.setPosition(100, 100);
-  const port2 = node2.addOutPort('Out');
+  node1.setPosition(200, 100);
 
-  const link = port1.link<DefaultLinkModel>(port2);
-  link.addLabel('Hello World!');
+  const port1 = node1.addOutPort('Out');
 
-  const model = new DiagramModel();
-  model.addAll(node1, node2, link);
+  const node2 = new DefaultNodeModel('Node 2', 'rgb(192,255,0)');
+  const port2 = node2.addInPort('In');
+  node2.setPosition(400, 100);
+
+  const link1 = port1.link<DefaultLinkModel>(port2);
+  link1.getOptions().testName = 'Test';
+  link1.addLabel('Hello World!');
+
+  model.addAll(node1, node2, node3, link1);
+
   engine.setModel(model);
-  return <CanvasWidget engine={engine} />;
+
+  return (
+    <DemoCanvasWidget>
+      <CanvasWidget engine={engine} />
+    </DemoCanvasWidget>
+  );
 };
