@@ -5,7 +5,7 @@ import { EventEmitter } from 'events';
 import { differenceBetweenSetsInArray } from 'src/tools';
 
 @Injectable()
-export class USBSerialDeviceWatcherService {
+export class USBSerialDeviceObserverService {
   private deviceScanInterval!: NodeJS.Timer;
   private deviceWatchEmitter = new EventEmitter();
   private prevSerialPortsSet!: Set<string>;

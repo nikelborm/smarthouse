@@ -8,7 +8,7 @@ import {
 } from 'src/types';
 import { EntityManager } from 'typeorm';
 import { InjectEntityManager } from '@nestjs/typeorm';
-import { model, repo } from '../infrastructure';
+import { repo } from '../infrastructure';
 import { EncryptionUseCase } from '../encryption';
 import {
   assertThereAreNoDuplicateUUIDs,
@@ -47,47 +47,39 @@ export class ClientInitialHandshakeUseCase {
   ): Promise<InitHandshakeResponse> {
     await this.validateHandshakeRequest(handshakeRequest);
 
-    const encryptionWorker = this.encryptionUseCase.getEncryptionWorker(
-      handshakeRequest.encryptionWorkerUUID,
+    const { newlyInsertedEventIds } =
+      await this.registerOnlyNewEventsAndParameters(
+        transactionManager,
+        handshakeRequest.supported.eventParameters,
+        handshakeRequest.supported.events,
+      );
+
+    const eventUUIDToIdMap = remapToIndexedObject(
+      await this.eventRepo.getInTransactionWithIdsBy(
+        handshakeRequest.supported.events.map(({ uuid }) => uuid),
+        transactionManager,
+      ),
+      ({ uuid }) => uuid,
+      ({ id }) => id,
     );
 
-    const { eventUUIDToIdMap } = await this.registerOnlyNewEventsAndParameters(
+    await this.registerOnlyNewEventToParameterAssociations(
       transactionManager,
       handshakeRequest.supported.eventParameters,
       handshakeRequest.supported.events,
+      newlyInsertedEventIds,
+      eventUUIDToIdMap,
     );
 
-    const { credentialsToStoreInDatabase, credentialsToSendBackToClient } =
-      await encryptionWorker.getServerSideHandshakeCredentials(
-        handshakeRequest.encryptionWorkerCredentials,
-      );
-
-    const { id: registeredClientId } =
-      await this.clientRepo.createOneInTransactionWithRelations(
-        {
-          uuid: handshakeRequest.uuid,
-          shortname: handshakeRequest.shortname,
-          fullname: handshakeRequest.fullname,
-          description: handshakeRequest.description,
-          encryptionWorkerUUID: handshakeRequest.encryptionWorkerUUID,
-          encryptionWorkerCredentials: credentialsToStoreInDatabase,
-        },
+    const { credentialsToSendBackToClient, registeredClientId } =
+      await this.registerClientAndItsEndpoints(
         transactionManager,
+        handshakeRequest,
+        eventUUIDToIdMap,
       );
-
-    await this.endpointRepo.createManyPlainInTransaction(
-      handshakeRequest.supported.routeEndpoints.map(
-        ({ eventUUID, ...rest }) => ({
-          ...rest,
-          clientId: registeredClientId,
-          ...(eventUUID && { eventId: eventUUIDToIdMap[eventUUID] }),
-        }),
-      ),
-      transactionManager,
-    );
 
     return {
-      registeredClientId: 123,
+      registeredClientId,
       wifi: {
         BSSID: '00:00:5e:00:53:af',
         password: 'shit',
@@ -106,15 +98,9 @@ export class ClientInitialHandshakeUseCase {
     supportedEventParameters: RequestedEventParameter[],
     supportedEvents: RequestedEvent[],
   ) {
-    const eventParametersUUIDs = supportedEventParameters.map(
-      ({ uuid }) => uuid,
-    );
-
-    const eventsUUIDs = supportedEvents.map(({ uuid }) => uuid);
-
     try {
       await this.eventParameterRepo.insertInTransactionOnlyNewEventParameters(
-        supportedEventParameters,
+        supportedEventParameters.map((fields) => ({ ...fields })),
         transactionManager,
       );
     } catch (error) {
@@ -124,13 +110,8 @@ export class ClientInitialHandshakeUseCase {
     }
 
     const eventsToInsert = supportedEvents.map(
-      ({ uuid, name, description, type, hexColor }) => ({
-        uuid,
-        name,
-        description,
-        type,
-        hexColor,
-      }),
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      ({ optionalParameterUUIDs, requiredParameterUUIDs, ...rest }) => rest,
     );
 
     const newlyInsertedEventIds = new Set(
@@ -142,18 +123,21 @@ export class ClientInitialHandshakeUseCase {
       ).generatedMaps.map(({ id }) => id),
     );
 
-    const eventUUIDToIdMap = remapToIndexedObject(
-      await this.eventRepo.getInTransactionWithIdsBy(
-        eventsUUIDs,
-        transactionManager,
-      ),
-      ({ uuid }) => uuid,
-      ({ id }) => id,
-    );
+    return {
+      newlyInsertedEventIds,
+    };
+  }
 
+  private async registerOnlyNewEventToParameterAssociations(
+    transactionManager: EntityManager,
+    supportedEventParameters: RequestedEventParameter[],
+    supportedEvents: RequestedEvent[],
+    newlyInsertedEventIds: Set<number>,
+    eventUUIDToIdMap: Record<string, number>,
+  ) {
     const eventParameterUUIDToId = remapToIndexedObject(
       await this.eventParameterRepo.getInTransactionWithIdsBy(
-        eventParametersUUIDs,
+        supportedEventParameters.map(({ uuid }) => uuid),
         transactionManager,
       ),
       ({ uuid }) => uuid,
@@ -188,6 +172,55 @@ export class ClientInitialHandshakeUseCase {
     return {
       eventUUIDToIdMap,
       eventParameterUUIDToId,
+    };
+  }
+
+  private async registerClientAndItsEndpoints(
+    transactionManager: EntityManager,
+    {
+      uuid,
+      shortname,
+      fullname,
+      description,
+      encryptionWorkerUUID,
+      encryptionWorkerCredentials,
+      supported: { routeEndpoints },
+    }: InitHandshakeQuery,
+    eventUUIDToIdMap: Record<string, number>,
+  ) {
+    const encryptionWorker =
+      this.encryptionUseCase.getEncryptionWorker(encryptionWorkerUUID);
+
+    const { credentialsToStoreInDatabase, credentialsToSendBackToClient } =
+      await encryptionWorker.getServerSideHandshakeCredentials(
+        encryptionWorkerCredentials,
+      );
+
+    const { id: registeredClientId } =
+      await this.clientRepo.createOneInTransactionWithRelations(
+        {
+          uuid: uuid,
+          shortname: shortname,
+          fullname: fullname,
+          description: description,
+          encryptionWorkerUUID: encryptionWorkerUUID,
+          encryptionWorkerCredentials: credentialsToStoreInDatabase,
+        },
+        transactionManager,
+      );
+
+    await this.endpointRepo.createManyPlainInTransaction(
+      routeEndpoints.map(({ eventUUID, ...rest }) => ({
+        ...rest,
+        clientId: registeredClientId,
+        ...(eventUUID && { eventId: eventUUIDToIdMap[eventUUID] }),
+      })),
+      transactionManager,
+    );
+
+    return {
+      registeredClientId,
+      credentialsToSendBackToClient,
     };
   }
 
