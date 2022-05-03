@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { USBSerialDeviceWatcherService } from './USBSerialDeviceWatcher.service';
+import { USBSerialDeviceObserverService } from './USBSerialDeviceObserver.service';
 import { SerialPort, ReadlineParser } from 'serialport';
 import { ClientInitialHandshakeUseCase } from './clientInitialHandshake.useCase';
 import { InitHandshakeQuery } from 'src/types';
@@ -7,10 +7,10 @@ import { InitHandshakeQuery } from 'src/types';
 @Injectable()
 export class ClientInitialHardwareHandshakeService {
   constructor(
-    private readonly deviceWatcher: USBSerialDeviceWatcherService,
+    private readonly deviceObserver: USBSerialDeviceObserverService,
     private readonly clientInitialHandshakeUseCase: ClientInitialHandshakeUseCase,
   ) {
-    this.deviceWatcher.addListenerForNewDevice(this.tryToConnectThroughSerial);
+    this.deviceObserver.addListenerForNewDevice(this.tryToConnectThroughSerial);
   }
 
   tryToConnectThroughSerial(newSerialDevicePath: string) {
