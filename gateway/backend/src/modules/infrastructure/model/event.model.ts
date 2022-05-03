@@ -32,7 +32,7 @@ export class Event {
     name: 'event_name_alias',
     nullable: true,
   })
-  nameAlias!: string;
+  nameAlias?: string;
 
   @Column({
     name: 'event_description',
@@ -44,7 +44,7 @@ export class Event {
     name: 'event_description_alias',
     nullable: true,
   })
-  descriptionAlias!: string;
+  descriptionAlias?: string;
 
   @Column({
     type: 'enum',

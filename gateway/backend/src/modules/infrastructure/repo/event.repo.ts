@@ -47,7 +47,7 @@ export class EventRepo {
     });
     if (!event)
       throw new BadRequestException(
-        messages.repo.common.cantGetNotFoundById('event', id),
+        messages.repo.common.cantGetNotFoundById(id, 'event'),
       );
     return event;
   }

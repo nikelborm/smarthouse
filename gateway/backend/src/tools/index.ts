@@ -1,5 +1,6 @@
 export * from './accessLog.middleware';
 export * from './areSetsEqual';
+export * from './assertThereAreNoDuplicateUUIDs';
 export * from './countValid';
 export * from './difference';
 export * from './groupBy';

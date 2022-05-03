@@ -34,7 +34,7 @@ export class Client {
     name: 'client_shortname_alias',
     nullable: true,
   })
-  shortnameAlias!: string;
+  shortnameAlias?: string;
 
   @Column({
     name: 'client_fullname',
@@ -46,7 +46,7 @@ export class Client {
     name: 'client_fullname_alias',
     nullable: true,
   })
-  fullnameAlias!: string;
+  fullnameAlias?: string;
 
   @Column({
     name: 'client_description',
@@ -58,7 +58,7 @@ export class Client {
     name: 'client_description_alias',
     nullable: true,
   })
-  descriptionAlias!: string;
+  descriptionAlias?: string;
 
   @Column({
     type: 'timestamptz',

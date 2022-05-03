@@ -29,69 +29,69 @@ export const messages = {
   },
   repo: {
     common: {
-      cantCreateWithId: (entityName: string, entity: any) =>
+      cantCreateWithId: (entity: any, entityName?: string) =>
         `Can\`t create an ${
           entityName || 'entity'
         }: there's an id specified where it should not be. JSON: ${JSON.stringify(
           entity,
         )}`,
-      cantCreateWithIds: (entityName: string, entities: any[]) =>
+      cantCreateWithIds: (entities: any[], entityName?: string) =>
         `Can\`t create ${pluralForm(
           entityName || 'entity',
         )}: there are ids specified where they should not be. JSON: ${JSON.stringify(
           entities,
         )}`,
-      cantUpdateWithoutId: (entityName: string, entity: any) =>
+      cantUpdateWithoutId: (entity: any, entityName?: string) =>
         `Can\`t update an ${
           entityName || 'entity'
         }: there is no id specified where it should. JSON: ${JSON.stringify(
           entity,
         )}`,
-      cantUpdateWithoutIds: (entityName: string, entities: any[]) =>
+      cantUpdateWithoutIds: (entities: any[], entityName?: string) =>
         `Can\`t update an ${pluralForm(
           entityName || 'entity',
         )}: there are no ids specified where they should be. JSON: ${JSON.stringify(
           entities,
         )}`,
-      cantDeleteWithoutId: (entityName: string, entity: any) =>
+      cantDeleteWithoutId: (entity: any, entityName?: string) =>
         `Can\`t delete an ${
           entityName || 'entity'
         }: there is no id specified where it should be. JSON: ${JSON.stringify(
           entity,
         )}`,
-      cantDeleteWithoutIds: (entityName: string, entities: any[]) =>
+      cantDeleteWithoutIds: (entities: any[], entityName?: string) =>
         `Can\`t delete an ${pluralForm(
           entityName || 'entity',
         )}: there is no id specified where it should be. JSON: ${JSON.stringify(
           entities,
         )}`,
-      cantGetNotFoundById: (entityName: string, id: number) =>
+      cantGetNotFoundById: (id: number, entityName?: string) =>
         `${startsWithCapital(
           entityName || 'entity',
         )} with id={${id}} was not found`,
-      cantGetNotFoundByUUID: (entityName: string, uuid: string) =>
+      cantGetNotFoundByUUID: (uuid: string, entityName?: string) =>
         `${startsWithCapital(
           entityName || 'entity',
         )} with uuid={${uuid}} was not found`,
-      cantUpdateOneNotFound: (entityName: string, id: number) =>
+      cantUpdateOneNotFound: (id: number, entityName?: string) =>
         `Cannot update ${
           entityName || 'entity'
         } with id={${id}}, because it does not exist`,
       cantUpdateManyNotFound: (
-        entityName: string,
         wantedToUpdateEntityIds: number[],
         notExistingEntityIds: number[],
+        entityName?: string,
       ) =>
         `Cannot update ${pluralForm(
           entityName || 'entity',
         )} with ids={${wantedToUpdateEntityIds.join()}}, because some ${
           entityName || 'entity'
         }s with ids={${notExistingEntityIds.join()}} does not exist`,
-      cantCreateOne: (entityName: string, newEntity: any) =>
+      cantCreateOne: (newEntity: any, entityName?: string) =>
         `Unable to create new ${entityName || 'entity'} JSON: {${JSON.stringify(
           newEntity,
         )}}`,
-      cantCreateMany: (entityName: string, newEntities: any[]) =>
+      cantCreateMany: (newEntities: any[], entityName?: string) =>
         `Unable to insert ${pluralForm(
           entityName || 'entity',
         )}. JSON: {${JSON.stringify(newEntities)}}`,

@@ -14,8 +14,8 @@ export async function updateOneWithRelations<T extends EntityWithId>(
     entity: updatedEntity,
     shouldIdExist: true,
     errorText: messages.repo.common.cantUpdateWithoutId(
-      entityName,
       updatedEntity,
+      entityName,
     ),
   });
   if (
@@ -23,7 +23,7 @@ export async function updateOneWithRelations<T extends EntityWithId>(
     (await doesEntityNotExist(repo, updatedEntity))
   )
     throw new BadRequestException(
-      messages.repo.common.cantUpdateOneNotFound(entityName, updatedEntity.id),
+      messages.repo.common.cantUpdateOneNotFound(updatedEntity.id, entityName),
     );
 
   //@ts-expect-error asdd

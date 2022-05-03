@@ -30,7 +30,7 @@ export class ClientRepo {
     });
     if (!client)
       throw new BadRequestException(
-        messages.repo.common.cantGetNotFoundById('client', id),
+        messages.repo.common.cantGetNotFoundById(id, 'client'),
       );
     return client;
   }

@@ -33,7 +33,7 @@ export class EventParameter {
     name: 'event_parameter_name_alias',
     nullable: true,
   })
-  nameAlias!: string;
+  nameAlias?: string;
 
   @ManyToOne(
     () => DataValidator,

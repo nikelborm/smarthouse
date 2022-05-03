@@ -19,41 +19,41 @@ import {
 
 export class WiFiCredentials {
   @IsMACAddress()
-  BSSID: string;
+  BSSID!: string;
 
   @IsString()
   @MinLength(8)
-  password: string;
+  password!: string;
 }
 
 export class GatewayInfo {
   @IsUUID('4')
-  uuid: string;
+  uuid!: string;
 
   @IsUrl({ protocols: ['ws', 'wss'] })
-  WSAdress: string; // IP address inside wifi network (not localhost, because it is not universal)
+  WSAdress!: string; // IP address inside wifi network (not localhost, because it is not universal)
 
   @IsUrl({ protocols: ['http', 'https'] })
-  HTTPAdress: string; // same as WSAdress
+  HTTPAdress!: string; // same as WSAdress
 
   @IsDefined()
   @IsObject()
-  encryptionModuleCredentials: Record<string, any>;
+  encryptionModuleCredentials!: Record<string, any>;
 }
 
 export class InitHandshakeResponse {
   @IsPositive()
-  registeredClientId: number;
+  registeredClientId!: number;
 
   @IsDefined()
   @ValidateNested()
   @Type(() => GatewayInfo)
-  gateway: GatewayInfo;
+  gateway!: GatewayInfo;
 
   @IsDefined()
   @ValidateNested()
   @Type(() => WiFiCredentials)
-  wifi: WiFiCredentials;
+  wifi!: WiFiCredentials;
 }
 
 // encryptionModuleCredentials: {

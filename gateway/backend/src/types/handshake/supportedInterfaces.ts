@@ -10,22 +10,22 @@ export class SupportedInterfaces {
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => RequestedEvent)
-  events: RequestedEvent[];
+  events!: RequestedEvent[];
 
   @IsDefined()
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => RequestedEventParameter)
-  eventParameters: RequestedEventParameter[];
+  eventParameters!: RequestedEventParameter[];
 
   @IsDefined()
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => RequestedEndpoint)
-  routeEndpoints: RequestedEndpoint[];
+  routeEndpoints!: RequestedEndpoint[];
 
   @IsDefined()
   @ValidateNested()
   @Type(() => TransportConfig)
-  transport: TransportConfig;
+  transport!: TransportConfig;
 }

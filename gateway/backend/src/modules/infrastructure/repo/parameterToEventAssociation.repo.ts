@@ -31,8 +31,8 @@ export class ParameterToEventAssociationRepo {
     if (!parameterToEventAssociation)
       throw new BadRequestException(
         messages.repo.common.cantGetNotFoundById(
-          'parameterToEventAssociation',
           id,
+          'parameterToEventAssociation',
         ),
       );
     return parameterToEventAssociation;

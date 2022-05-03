@@ -11,14 +11,14 @@ export const GatewayAsClientInitializer = {
     endpointRepo: repo.EndpointRepo,
     configService: ConfigService,
   ) => {
-    const endopintUUIDsRegisteredInDB = (
+    const endpointUUIDsRegisteredInDB = (
       await endpointRepo.getManyWithOnlyUUIDsByClientUUID(
-        configService.get('gatewayUUID'),
+        configService.get('gatewayUUID') as string,
       )
     ).map(({ uuid }) => uuid);
 
-    console.log('endopintUUIDsRegisteredInDB: ', endopintUUIDsRegisteredInDB);
-    return endopintUUIDsRegisteredInDB;
+    console.log('endopintUUIDsRegisteredInDB: ', endpointUUIDsRegisteredInDB);
+    return endpointUUIDsRegisteredInDB;
   },
   inject: [repo.EndpointRepo, ConfigService],
 };

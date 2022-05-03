@@ -1,5 +1,5 @@
 export class GetRoutesGraphQuery {
-  clients: {
+  clients!: {
     id: number;
     uuid: string;
     shortname: string;

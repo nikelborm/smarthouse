@@ -11,32 +11,32 @@ import { EventType } from '../eventType';
 
 export class RequestedEvent {
   @IsUUID('4')
-  uuid: string;
+  uuid!: string;
 
   @IsString()
   @MinLength(2)
   @MaxLength(140)
-  name: string;
+  name!: string;
 
   @IsString()
   @MinLength(2)
-  description: string;
+  description!: string;
 
   @IsEnum(EventType)
-  type: EventType;
+  type!: EventType;
 
   @IsDefined()
   @IsArray()
   @IsUUID('4', { each: true })
-  requiredParameterUUIDs: string[];
+  requiredParameterUUIDs!: string[];
 
   @IsDefined()
   @IsArray()
   @IsUUID('4', { each: true })
-  optionalParameterUUIDs: string[];
+  optionalParameterUUIDs!: string[];
 
   @IsString()
   @MinLength(6)
   @MaxLength(6)
-  hexColor: string;
+  hexColor!: string;
 }

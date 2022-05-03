@@ -31,7 +31,7 @@ export class RouteRepo {
     });
     if (!route)
       throw new BadRequestException(
-        messages.repo.common.cantGetNotFoundById('route', id),
+        messages.repo.common.cantGetNotFoundById(id, 'route'),
       );
     return route;
   }

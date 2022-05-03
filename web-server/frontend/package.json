@@ -19,6 +19,7 @@
     "autobind-decorator": "^2.4.0",
     "closest": "^0.0.1",
     "cross-env": "^7.0.3",
+    "csv": "^6.0.5",
     "dagre": "^0.8.5",
     "date-fns": "^2.21.3",
     "eslint": "^8.13.0",

@@ -29,14 +29,16 @@ export class EndpointRepo {
     });
     if (!endpoint)
       throw new BadRequestException(
-        messages.repo.common.cantGetNotFoundById('endpoint', id),
+        messages.repo.common.cantGetNotFoundById(id, 'endpoint'),
       );
     return endpoint;
   }
 
-  async getOneByUUID(uuid: string): Promise<EndpointToUseAsSource> {
+  async getOneByUUID(uuid: string) {
     const endpoint = await this.repo.findOne({
-      where: { uuid },
+      where: {
+        uuid,
+      },
       select: {
         id: true,
         uuid: true,
@@ -68,7 +70,7 @@ export class EndpointRepo {
       throw new BadRequestException(
         messages.repo.common.cantGetNotFoundByUUID('endpoint', uuid),
       );
-    return endpoint;
+    return endpoint as EndpointToUseAsSource;
   }
 
   async getManyWithOnlyUUIDsByClientUUID(clientUUID: string) {

@@ -30,7 +30,7 @@ export class EventParameterRepo {
     });
     if (!eventParameter)
       throw new BadRequestException(
-        messages.repo.common.cantGetNotFoundById('eventParameter', id),
+        messages.repo.common.cantGetNotFoundById(id, 'eventParameter'),
       );
     return eventParameter;
   }

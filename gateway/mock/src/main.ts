@@ -10,7 +10,7 @@ async function bootstrap() {
   const configService = app.get(ConfigService);
   logConfig(configService);
   if (process.argv.includes('listen')) {
-    await app.listen(configService.get('serverPort'));
+    await app.listen(configService.get('serverPort') as number);
   } else {
     const mockUseCase = app.get(MockDataUseCase);
     const scriptName = configService.get('mockDataFillerScriptMethodName');

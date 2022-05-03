@@ -6,6 +6,64 @@ import createEngine, {
 } from '@projectstorm/react-diagrams';
 import { CanvasWidget } from '@projectstorm/react-canvas-core';
 import styled from 'styled-components';
+import { parse } from 'csv-parse/browser/esm/sync';
+import { remapToIndexedObject } from 'utils/remapToIndexedObject';
+
+function getRandomInt(max: number) {
+  return Math.floor(Math.random() * max);
+}
+
+function findDirectedCycle<T>(
+  startNodes: Iterable<T>,
+  getConnectedNodes: (node: T) => Iterable<T>
+) {
+  function connected(node) {
+    const thing = getConnectedNodes(node);
+    if (thing == null) return [][Symbol.iterator]();
+    if (thing[Symbol.iterator]) return thing[Symbol.iterator]();
+    return thing;
+  }
+
+  const visited = new Set();
+
+  const nodeStack: T[] = [];
+  const connectedNodeStack: (Iterable<T> | Iterator<T>)[] = [];
+  const nodeIndexes = new Map();
+
+  for (const startNode of startNodes) {
+    if (visited.has(startNode)) continue;
+    visited.add(startNode);
+    nodeIndexes.set(startNode, nodeStack.length);
+    nodeStack.push(startNode);
+    connectedNodeStack.push(connected(startNode));
+
+    while (nodeStack.length) {
+      const connectedNodes = connectedNodeStack[
+        connectedNodeStack.length - 1
+      ] as any;
+      const next = connectedNodes.next();
+      if (next.done) {
+        connectedNodeStack.pop();
+        const removedNode = nodeStack.pop();
+        nodeIndexes.delete(removedNode);
+        continue;
+      }
+      const nextNode = next.value;
+      const cycleStartIndex = nodeIndexes.get(nextNode);
+      if (cycleStartIndex != null) {
+        // found a cycle!
+        return nodeStack.slice(cycleStartIndex);
+      }
+      if (visited.has(nextNode)) continue;
+      visited.add(nextNode);
+      nodeIndexes.set(nextNode, nodeStack.length);
+      nodeStack.push(nextNode);
+      connectedNodeStack.push(connected(nextNode));
+    }
+  }
+
+  return null;
+}
 
 export const Toolbar = styled.div`
   padding: 5px;
@@ -88,59 +146,146 @@ export const Container = styled.div<{ color: string; background: string }>`
     );
 `;
 
-export class DemoCanvasWidget extends React.Component<DemoCanvasWidgetProps> {
-  render() {
-    return (
-      <>
-        <Container
-          background={this.props.background || 'rgb(60, 60, 60)'}
-          color={this.props.color || 'rgba(255,255,255, 0.05)'}
-          style={{
-            width: '500px',
-            height: '500px',
-          }}
-        >
-          {this.props.children}
-        </Container>
-      </>
-    );
-  }
+function buildElectiveNode(name: string) {
+  const node = new DefaultNodeModel({
+    name: name,
+    color: `hsl(${getRandomInt(360)}, 100%, 69%)`,
+  });
+  const outPort = node.addOutPort('Out');
+  const inPort = node.addInPort('In');
+  return {
+    name,
+    node,
+    outPort,
+    inPort,
+  };
 }
+
 export const RoutesGraph = () => {
   const engine = createEngine();
 
   const model = new DiagramModel();
+  const input = `
+Фамилия Имя,Текущий электив,Желаемый электив
+Бормотов Николай,Схематичный рисунок,Информация: новый подход
+Джамиев Касум,Статистика,Схематичный рисунок
+Шейко Ксения ,Тестирование ПО,Поиск и устранение неисправностей
+Абакарова Кистаман,Статистика,Тестирование ПО
+Абакарова Кистаман,Статистика,Информация: новый подход
+Манацкая Кристина,"""Мега"" миля",Тестирование ПО
+Коленкин Алексей,Статистика,"""Мега"" миля"
+Коленкин Алексей,Статистика,Схематичный рисунок
+Коленкин Алексей,Статистика,Поиск и устранение неисправностей
+Коваленко Злата ,"""Мега"" миля","Ток, код и роботы"
+Шевчук Роман,"""Мега"" миля","Ток, код и роботы"
+Антонян Артём,"Ток, код и роботы",Тестирование ПО
+Дрожжин Дмитрий,Информация: новый подход,Тестирование ПО
+Февралев Дмитрий,"Ток, код и роботы",Поиск и устранение неисправностей
+`;
 
-  const node1 = new DefaultNodeModel({
-    name: 'Node 1',
-    color: 'rgb(0,192,255)',
+  const content = parse(input, {
+    skip_empty_lines: true,
+  }) as [string, string, string][];
+
+  const connections = content.slice(1).map(([personName, source, sink]) => ({
+    personName,
+    source,
+    sink,
+  }));
+
+  const electivesNodeNames = [
+    ...new Set([
+      ...connections.map(({ source }) => source),
+      ...connections.map(({ sink }) => sink),
+    ]),
+  ];
+
+  const electivesNodes = electivesNodeNames.map(buildElectiveNode);
+
+  model.addAll(...electivesNodes.map(({ node }) => node));
+
+  const indexedElectiveNodes = remapToIndexedObject(
+    electivesNodes,
+    ({ name }) => name
+  );
+
+  const links = connections.map(({ personName, sink, source }) => {
+    const link = indexedElectiveNodes[source].outPort.link<DefaultLinkModel>(
+      indexedElectiveNodes[sink].inPort
+    );
+    link.getOptions().testName = [personName, sink, source].join();
+    link.addLabel(personName);
+    return link;
   });
 
-  node1.setPosition(100, 100);
-
-  const node3 = new DefaultNodeModel({
-    name: 'Node 3',
-    color: 'rgb(0,192,255)',
-  });
-  node1.setPosition(200, 100);
-
-  const port1 = node1.addOutPort('Out');
-
-  const node2 = new DefaultNodeModel('Node 2', 'rgb(192,255,0)');
-  const port2 = node2.addInPort('In');
-  node2.setPosition(400, 100);
-
-  const link1 = port1.link<DefaultLinkModel>(port2);
-  link1.getOptions().testName = 'Test';
-  link1.addLabel('Hello World!');
-
-  model.addAll(node1, node2, node3, link1);
-
+  model.addAll(...links);
   engine.setModel(model);
 
+  function getSourcesOfNode(sinkName: string): string[] {
+    return connections
+      .filter(({ sink }) => sink === sinkName)
+      .map(({ source }) => source);
+  }
+
+  function getAllPossibleInputNodes(sinkName: string): string[] {
+    const sourcesOfNode = getSourcesOfNode(sinkName);
+
+    const secondarySourcesOfNode = sourcesOfNode.flatMap((sourceOfNode) =>
+      getAllPossibleInputNodes(sourceOfNode)
+    );
+
+    return [...new Set([...sourcesOfNode, ...secondarySourcesOfNode])];
+  }
+
+  const missingLinks = electivesNodeNames.flatMap((sink) =>
+    getAllPossibleInputNodes(sink).map((source) => ({
+      source: sink,
+      sink: source,
+    }))
+  );
+
+  const maxlength = Math.max(
+    ...missingLinks.map(({ source }) => source.length)
+  );
+
+  const missingLinksBeatified = missingLinks
+    .map(
+      ({ sink, source }) =>
+        `Текущий электив: ${source},${' '.repeat(
+          maxlength - source.length
+        )} Желаемый электив: ${sink}`
+    )
+    .join('\n');
+  console.log(missingLinksBeatified);
+
+  const edges: { [sourceElectiveName: string]: string[] } = {};
+
+  for (const connection of connections) {
+    if (connection.source in edges) {
+      edges[connection.source].push(connection.sink);
+    } else {
+      edges[connection.source] = [connection.sink];
+    }
+  }
+  console.log('edges: ', edges);
+  const startNodes = ['Статистика'];
+  const getConnectedNodes = (node: string | number) => edges[node];
+
+  console.log(
+    'findDirectedCycle(startNodes, getConnectedNodes): ',
+    findDirectedCycle(startNodes, getConnectedNodes)
+  );
+
   return (
-    <DemoCanvasWidget>
+    <Container
+      background="rgb(60, 60, 60)"
+      color="rgba(255,255,255, 0.05)"
+      style={{
+        width: '100%',
+        height: '45vw',
+      }}
+    >
       <CanvasWidget engine={engine} />
-    </DemoCanvasWidget>
+    </Container>
   );
 };

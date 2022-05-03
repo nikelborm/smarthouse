@@ -2,8 +2,8 @@ import { IsBoolean } from 'class-validator';
 
 export class TransportConfig {
   @IsBoolean()
-  wss: boolean;
+  wss!: boolean;
 
   @IsBoolean()
-  http: boolean;
+  http!: boolean;
 }
