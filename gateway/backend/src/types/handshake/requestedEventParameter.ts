@@ -2,18 +2,18 @@ import { IsString, IsUUID, MaxLength, MinLength } from 'class-validator';
 
 export class RequestedEventParameter {
   @IsUUID('4')
-  uuid: string;
+  uuid!: string;
 
   @IsString()
   @MinLength(2)
   @MaxLength(140)
-  name: string;
+  name!: string;
 
   @IsUUID('4')
-  dataValidatorUUID: string;
+  dataValidatorUUID!: string;
 
   @IsString()
   @MinLength(2)
   @MaxLength(20)
-  measurementUnit: string;
+  measurementUnit!: string;
 }

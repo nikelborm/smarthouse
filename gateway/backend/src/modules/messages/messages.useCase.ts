@@ -7,6 +7,7 @@ import {
   DecryptedRegularMessage,
   EndpointType,
   EventType,
+  IDecryptedRegularMessage,
   SupportedEventsParamsEndpoints,
   validate,
 } from 'src/types';
@@ -106,7 +107,7 @@ export class MessagesUseCase {
   }
 
   async emitNewMessage(
-    parsedMessage: DecryptedRegularMessage,
+    parsedMessage: IDecryptedRegularMessage,
     endpointToUseAsSource: EndpointToUseAsSource,
   ) {
     const validationErrors = validate(parsedMessage, DecryptedRegularMessage);
@@ -121,8 +122,9 @@ export class MessagesUseCase {
     ) {
       const messageTag = `${parsedMessage.replyForMessageUUID}${parsedMessage.endpointUUID}`;
       if (this.messagesWaitingForResponseStore.has(messageTag)) {
-        const { sourceEndpointUUID } =
-          this.messagesWaitingForResponseStore.get(messageTag);
+        const { sourceEndpointUUID } = this.messagesWaitingForResponseStore.get(
+          messageTag,
+        ) as { sourceEndpointUUID: string };
 
         const message = plainToInstance(DecryptedRegularMessage, {
           endpointUUID: sourceEndpointUUID,
@@ -226,7 +228,9 @@ export class MessagesUseCase {
 
   private authRequestCB: AuthRequestCB = async (message) => {
     const validationErrors = validate(message, AuthMessage);
+
     console.log('authRequestCB message: ', message);
+
     if (validationErrors.length)
       throw new Error('Authorization: validation error');
 
@@ -264,14 +268,19 @@ export class MessagesUseCase {
     );
     console.log('jsonString: ', jsonString);
 
-    const parsedMessage: DecryptedRegularMessage = JSON.parse(jsonString);
+    const parsedMessage: IDecryptedRegularMessage = JSON.parse(jsonString);
     console.log('authedMessageCB parsedMessage: ', parsedMessage);
 
     const endpoint = clientSender.endpoints.find(
       ({ uuid }) => parsedMessage.endpointUUID === uuid,
     );
 
-    await this.emitNewMessage(parsedMessage, endpoint);
+    if (!endpoint)
+      throw new Error(
+        `You (client ${clientSender.uuid}) didn't registered emdpoint ${parsedMessage.endpointUUID}. You can't send messages using it`,
+      );
+
+    await this.emitNewMessage(parsedMessage, endpoint as EndpointToUseAsSource);
   };
 
   private authedClientOfflineCB: OnlineStatusChangedCB = async (client) => {
@@ -292,7 +301,7 @@ export class MessagesUseCase {
 
   private async validateIncomingMessage(
     endpointToUseAsSource: EndpointToUseAsSource,
-    parsedMessage: DecryptedRegularMessage,
+    parsedMessage: IDecryptedRegularMessage,
   ) {
     if (!endpointToUseAsSource)
       throw new Error(
@@ -445,6 +454,7 @@ export type EndpointToUseAsSource = {
     uuid: string;
     type: EventType;
     parameterAssociations: {
+      id: number;
       eventParameter: {
         id: number;
         uuid: string;

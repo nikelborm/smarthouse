@@ -13,8 +13,8 @@ export async function softDeleteOne<T extends EntityWithId>(
     entity: entityToBeHidden,
     shouldIdExist: true,
     errorText: messages.repo.common.cantDeleteWithoutId(
-      entityName,
       entityToBeHidden,
+      entityName,
     ),
   });
   // TODO: Сделать проверку на то существует ли сущность с этим айди

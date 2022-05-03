@@ -28,7 +28,7 @@ export class Route {
     nullable: false,
     name: 'source_endpoint_id',
   })
-  sourceEndpointId: number;
+  sourceEndpointId!: number;
 
   @ManyToOne(() => Endpoint, (endpoint) => endpoint.incomingRoutes, {
     nullable: false,
@@ -40,7 +40,7 @@ export class Route {
     nullable: false,
     name: 'sink_endpoint_id',
   })
-  sinkEndpointId: number;
+  sinkEndpointId!: number;
 
   @CreateDateColumn({
     type: 'timestamptz',

@@ -5,7 +5,7 @@ import { model } from '../infrastructure';
 
 export class WebsocketService {
   private readonly server: Server<WebSocketCustomClient>;
-  private deadSocketsCleanerInterval: NodeJS.Timer;
+  private deadSocketsCleanerInterval!: NodeJS.Timer;
 
   constructor(
     private readonly configService: ConfigService,

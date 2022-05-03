@@ -41,7 +41,7 @@ export class Endpoint {
     name: 'endpoint_name_alias',
     nullable: true,
   })
-  nameAlias!: string;
+  nameAlias?: string;
 
   @Column({
     name: 'endpoint_shortcode',
@@ -61,22 +61,22 @@ export class Endpoint {
     name: 'endpoint_description_alias',
     nullable: true,
   })
-  descriptionAlias!: string;
+  descriptionAlias?: string;
 
   // nullable: true может произойти например если это универсальный вход
   @ManyToOne(() => Event, (event) => event.endpoints, { nullable: true })
   @JoinColumn({ name: 'event_id' })
-  event!: Event;
+  event?: Event;
 
   @Column({ nullable: true, name: 'event_id' })
-  eventId: number;
+  eventId?: number;
 
   @ManyToOne(() => Client, (client) => client.endpoints, { nullable: false })
   @JoinColumn({ name: 'client_id' })
   client!: Client;
 
   @Column({ nullable: false, name: 'client_id' })
-  clientId: number;
+  clientId!: number;
 
   @Column({
     type: 'enum',
@@ -87,10 +87,10 @@ export class Endpoint {
   type!: EndpointType;
 
   @OneToMany(() => Route, (route) => route.sourceEndpoint)
-  outcomingRoutes: Route[];
+  outcomingRoutes!: Route[];
 
   @OneToMany(() => Route, (route) => route.sinkEndpoint)
-  incomingRoutes: Route[];
+  incomingRoutes!: Route[];
 
   @Column({
     name: 'endpoint_hex_color',

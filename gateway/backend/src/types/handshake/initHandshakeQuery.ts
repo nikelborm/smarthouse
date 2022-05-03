@@ -14,28 +14,28 @@ export class InitHandshakeQuery {
   @IsString()
   @MinLength(2)
   @MaxLength(70)
-  shortname: string;
+  shortname!: string;
 
   @IsString()
   @MinLength(2)
   @MaxLength(140)
-  fullname: string;
+  fullname!: string;
 
   @IsString()
   @MinLength(2)
-  description: string;
+  description!: string;
 
   @IsUUID('4')
-  uuid: string;
+  uuid!: string;
 
   @IsUUID('4')
-  encryptionWorkerUUID: string;
+  encryptionWorkerUUID!: string;
 
   @IsObject()
-  encryptionWorkerCredentials: Record<string, any>;
+  encryptionWorkerCredentials!: Record<string, any>;
 
   @IsDefined()
   @ValidateNested()
   @Type(() => SupportedInterfaces)
-  supported: SupportedInterfaces;
+  supported!: SupportedInterfaces;
 }

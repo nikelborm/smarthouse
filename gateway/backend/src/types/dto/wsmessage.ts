@@ -15,7 +15,7 @@ import type { SerializedIntoJsonData } from 'src/modules/dataValidator/IDataVali
 
 export class BaseMessageReport {
   @IsBoolean()
-  isOk: boolean;
+  isOk!: boolean;
 
   @IsOptional()
   @IsPositive()
@@ -29,26 +29,33 @@ export class BaseMessageReport {
 // Сообщение, которое отправляются друг другу
 export class AuthMessage {
   @IsUUID('4')
-  clientUUID: string;
+  clientUUID!: string;
 
   @IsObject()
-  credentials: Record<string, any>;
+  credentials!: Record<string, any>;
 }
 
 export class MessageParameter {
   @IsUUID('4')
-  uuid: string;
+  uuid!: string;
 
   @IsDefined()
   value: SerializedIntoJsonData;
 }
 
-export class DecryptedRegularMessage {
-  @IsUUID('4')
+export interface IDecryptedRegularMessage {
   messageUUID: string;
+  endpointUUID: string;
+  replyForMessageUUID?: string;
+  parameters?: MessageParameter[];
+}
+
+export class DecryptedRegularMessage implements IDecryptedRegularMessage {
+  @IsUUID('4')
+  messageUUID!: string;
 
   @IsUUID('4')
-  endpointUUID: string;
+  endpointUUID!: string;
 
   @IsOptional()
   @IsUUID('4')
@@ -59,7 +66,7 @@ export class DecryptedRegularMessage {
   @Type(() => MessageParameter)
   parameters?: MessageParameter[];
 
-  getParameterValueBy?(uuid: string) {
+  getParameterValueBy(uuid: string) {
     if (!isUUID(uuid))
       throw new Error(
         'DecryptedRegularMessage getParameterValueBy: function parameter should be uuid',
@@ -100,10 +107,10 @@ export function validateWithBase<U>(
 export class BaseMessage<T> {
   @IsDefined()
   @IsObject()
-  payload: T;
+  payload!: T;
 
   @IsDefined()
   @ValidateNested()
   @Type(() => BaseMessageReport)
-  report: BaseMessageReport;
+  report!: BaseMessageReport;
 }

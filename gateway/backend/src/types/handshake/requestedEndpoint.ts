@@ -10,21 +10,21 @@ import { EndpointType } from '../endpointType';
 
 export class RequestedEndpoint {
   @IsUUID('4')
-  uuid: string;
+  uuid!: string;
 
   @IsString()
   @MinLength(2)
   @MaxLength(140)
-  name: string;
+  name!: string;
 
   @IsString()
   @MinLength(1)
   @MaxLength(4)
-  shortcode: string;
+  shortcode!: string;
 
   @IsString()
   @MinLength(2)
-  description: string;
+  description!: string;
 
   @ValidateIf(
     (endpoint: RequestedEndpoint) =>
@@ -34,10 +34,10 @@ export class RequestedEndpoint {
   eventUUID?: string;
 
   @IsEnum(EndpointType)
-  type: EndpointType;
+  type!: EndpointType;
 
   @IsString()
   @MinLength(6)
   @MaxLength(6)
-  hexColor: string;
+  hexColor!: string;
 }

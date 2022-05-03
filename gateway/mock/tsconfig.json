@@ -12,12 +12,16 @@
     "baseUrl": "../backend",
     "incremental": true,
     "skipLibCheck": true,
-    "strictNullChecks": false,
     "noImplicitAny": false,
-    "strictBindCallApply": false,
     "forceConsistentCasingInFileNames": false,
     "noFallthroughCasesInSwitch": false,
     "strict": true,
-    "resolveJsonModule": true
+    "resolveJsonModule": true,
+    "alwaysStrict":true,
+    "plugins": [
+      {
+        "name": "typescript-strict-plugin"
+      }
+    ]
   }
 }

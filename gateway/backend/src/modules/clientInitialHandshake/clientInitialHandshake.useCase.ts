@@ -1,10 +1,17 @@
 import { Injectable } from '@nestjs/common';
-import { InitHandshakeQuery, InitHandshakeResponse, validate } from 'src/types';
+import {
+  InitHandshakeQuery,
+  InitHandshakeResponse,
+  RequestedEvent,
+  RequestedEventParameter,
+  validate,
+} from 'src/types';
 import { EntityManager } from 'typeorm';
 import { InjectEntityManager } from '@nestjs/typeorm';
 import { model, repo } from '../infrastructure';
 import { EncryptionUseCase } from '../encryption';
 import {
+  assertThereAreNoDuplicateUUIDs,
   differenceBetweenSetsInArray,
   doesArraysIntersects,
   remapToIndexedObject,
@@ -34,7 +41,7 @@ export class ClientInitialHandshakeUseCase {
     });
   }
 
-  async executeClientHandshake(
+  private async executeClientHandshake(
     transactionManager: EntityManager,
     handshakeRequest: InitHandshakeQuery,
   ): Promise<InitHandshakeResponse> {
@@ -44,89 +51,10 @@ export class ClientInitialHandshakeUseCase {
       handshakeRequest.encryptionWorkerUUID,
     );
 
-    const evenParametersUUIDs = handshakeRequest.supported.eventParameters.map(
-      ({ uuid }) => uuid,
-    );
-
-    try {
-      await this.eventParameterRepo.insertInTransactionOnlyNewEventParameters(
-        handshakeRequest.supported.eventParameters,
-        transactionManager,
-      );
-    } catch (error) {
-      throw new Error(
-        'Some of your required data validators does not implemented',
-      );
-    }
-
-    const eventToParameterAssociationsToInsert: {
-      eventParameterUUID: string;
-      eventUUID: string;
-      isParameterRequired: boolean;
-    }[] = [];
-    const eventsToInsert: Partial<model.Event>[] = [];
-
-    for (const {
-      optionalParameterUUIDs,
-      requiredParameterUUIDs,
-      ...event
-    } of handshakeRequest.supported.events) {
-      eventToParameterAssociationsToInsert.push(
-        ...[
-          ...optionalParameterUUIDs.map((uuid) => ({
-            eventParameterUUID: uuid,
-            eventUUID: event.uuid,
-            isParameterRequired: false,
-          })),
-          ...requiredParameterUUIDs.map((uuid) => ({
-            eventParameterUUID: uuid,
-            eventUUID: event.uuid,
-            isParameterRequired: true,
-          })),
-        ],
-      );
-      eventsToInsert.push(event);
-    }
-
-    const eventsToInsertUUIDs = eventsToInsert.map(({ uuid }) => uuid);
-
-    const newlyInsertedEventUUIDs = new Set(
-      (
-        await this.eventRepo.insertInTransactionOnlyNewEvents(
-          eventsToInsert,
-          transactionManager,
-        )
-      ).generatedMaps.map(({ uuid }) => uuid),
-    );
-
-    const indexedEvents = remapToIndexedObject(
-      await this.eventRepo.getInTransactionWithIdsBy(
-        eventsToInsertUUIDs,
-        transactionManager,
-      ),
-      ({ uuid }) => uuid,
-    );
-
-    const indexedEventParameters = remapToIndexedObject(
-      await this.eventParameterRepo.getInTransactionWithIdsBy(
-        evenParametersUUIDs,
-        transactionManager,
-      ),
-      ({ uuid }) => uuid,
-    );
-
-    const parameterToEventAssociationOnlyFromNewEvents =
-      eventToParameterAssociationsToInsert
-        .filter(({ eventUUID }) => newlyInsertedEventUUIDs.has(eventUUID))
-        .map(({ eventParameterUUID, eventUUID, isParameterRequired }) => ({
-          eventId: indexedEvents[eventUUID].id,
-          eventParameterId: indexedEventParameters[eventParameterUUID].id,
-          isParameterRequired,
-        }));
-
-    await this.parameterToEventAssociationRepo.createManyPlainInTransaction(
-      parameterToEventAssociationOnlyFromNewEvents,
+    const { eventUUIDToIdMap } = await this.registerOnlyNewEventsAndParameters(
       transactionManager,
+      handshakeRequest.supported.eventParameters,
+      handshakeRequest.supported.events,
     );
 
     const { credentialsToStoreInDatabase, credentialsToSendBackToClient } =
@@ -152,7 +80,7 @@ export class ClientInitialHandshakeUseCase {
         ({ eventUUID, ...rest }) => ({
           ...rest,
           clientId: registeredClientId,
-          eventId: indexedEvents[eventUUID].id,
+          ...(eventUUID && { eventId: eventUUIDToIdMap[eventUUID] }),
         }),
       ),
       transactionManager,
@@ -170,6 +98,96 @@ export class ClientInitialHandshakeUseCase {
         WSAdress: 'ws://123.234.345.456/socket',
         encryptionModuleCredentials: credentialsToSendBackToClient,
       },
+    };
+  }
+
+  private async registerOnlyNewEventsAndParameters(
+    transactionManager: EntityManager,
+    supportedEventParameters: RequestedEventParameter[],
+    supportedEvents: RequestedEvent[],
+  ) {
+    const eventParametersUUIDs = supportedEventParameters.map(
+      ({ uuid }) => uuid,
+    );
+
+    const eventsUUIDs = supportedEvents.map(({ uuid }) => uuid);
+
+    try {
+      await this.eventParameterRepo.insertInTransactionOnlyNewEventParameters(
+        supportedEventParameters,
+        transactionManager,
+      );
+    } catch (error) {
+      throw new Error(
+        'Some of your required data validators does not implemented',
+      );
+    }
+
+    const eventsToInsert = supportedEvents.map(
+      ({ uuid, name, description, type, hexColor }) => ({
+        uuid,
+        name,
+        description,
+        type,
+        hexColor,
+      }),
+    );
+
+    const newlyInsertedEventIds = new Set(
+      (
+        await this.eventRepo.insertInTransactionOnlyNewEvents(
+          eventsToInsert,
+          transactionManager,
+        )
+      ).generatedMaps.map(({ id }) => id),
+    );
+
+    const eventUUIDToIdMap = remapToIndexedObject(
+      await this.eventRepo.getInTransactionWithIdsBy(
+        eventsUUIDs,
+        transactionManager,
+      ),
+      ({ uuid }) => uuid,
+      ({ id }) => id,
+    );
+
+    const eventParameterUUIDToId = remapToIndexedObject(
+      await this.eventParameterRepo.getInTransactionWithIdsBy(
+        eventParametersUUIDs,
+        transactionManager,
+      ),
+      ({ uuid }) => uuid,
+      ({ id }) => id,
+    );
+
+    const eventToParameterAssociationsToInsert = supportedEvents.flatMap(
+      ({ optionalParameterUUIDs, requiredParameterUUIDs, uuid: eventUUID }) => [
+        ...optionalParameterUUIDs.map((eventParameterUUID) => ({
+          eventId: eventUUIDToIdMap[eventUUID],
+          eventParameterId: eventParameterUUIDToId[eventParameterUUID],
+          isParameterRequired: false,
+        })),
+        ...requiredParameterUUIDs.map((eventParameterUUID) => ({
+          eventId: eventUUIDToIdMap[eventUUID],
+          eventParameterId: eventParameterUUIDToId[eventParameterUUID],
+          isParameterRequired: true,
+        })),
+      ],
+    );
+
+    const parameterToEventAssociationOnlyFromNewEvents =
+      eventToParameterAssociationsToInsert.filter(({ eventId }) =>
+        newlyInsertedEventIds.has(eventId),
+      );
+
+    await this.parameterToEventAssociationRepo.createManyPlainInTransaction(
+      parameterToEventAssociationOnlyFromNewEvents,
+      transactionManager,
+    );
+
+    return {
+      eventUUIDToIdMap,
+      eventParameterUUIDToId,
     };
   }
 
@@ -203,9 +221,9 @@ export class ClientInitialHandshakeUseCase {
     )
       throw new Error('You have sent bad credentials');
 
-    this.areThereDuplicateUUIDs(eventParameters, 'event parameter');
-    this.areThereDuplicateUUIDs(events, 'event');
-    this.areThereDuplicateUUIDs(routeEndpoints, 'route endpoint');
+    assertThereAreNoDuplicateUUIDs(eventParameters, 'event parameter');
+    assertThereAreNoDuplicateUUIDs(events, 'event');
+    assertThereAreNoDuplicateUUIDs(routeEndpoints, 'route endpoint');
     // this.areThereDuplicateUUIDs(
     //   [...routeEndpoints, ...events, ...eventParameters],
     //   'su',
@@ -256,15 +274,5 @@ export class ClientInitialHandshakeUseCase {
 
     if (!transport.http && !transport.wss)
       throw new Error('You need to support at least 1 transport');
-  }
-
-  private areThereDuplicateUUIDs<T extends { uuid: string }>(
-    entities: T[],
-    entityName: string,
-  ) {
-    const entitiesUUIDs = entities.map(({ uuid }) => uuid);
-    const entitiesUUIDsWithoutDuplicates = new Set(entitiesUUIDs);
-    if (entitiesUUIDsWithoutDuplicates.size !== entitiesUUIDs.length)
-      throw new Error(`You requested duplicate ${entityName}s uuids`);
   }
 }

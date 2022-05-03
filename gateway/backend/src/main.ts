@@ -40,6 +40,6 @@ async function bootstrap() {
   // app.use(passport.session());
   app.enableCors();
   logConfig(configService);
-  await app.listen(configService.get('serverPort'));
+  await app.listen(configService.get('serverPort') as number);
 }
 bootstrap();

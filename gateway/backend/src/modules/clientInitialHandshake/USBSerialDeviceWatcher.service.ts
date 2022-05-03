@@ -6,9 +6,9 @@ import { differenceBetweenSetsInArray } from 'src/tools';
 
 @Injectable()
 export class USBSerialDeviceWatcherService {
-  private deviceScanInterval: NodeJS.Timer;
+  private deviceScanInterval!: NodeJS.Timer;
   private deviceWatchEmitter = new EventEmitter();
-  private prevSerialPortsSet: Set<string>;
+  private prevSerialPortsSet!: Set<string>;
 
   constructor(private readonly configService: ConfigService) {
     this.getCurrentSerialDeviceSet().then((initialDeviceSet) => {
@@ -58,7 +58,9 @@ export class USBSerialDeviceWatcherService {
       data: string;
     };
 
-    const regexpes = this.configService.get<RegExp[]>('serialPortPatterns');
+    const regexpes: RegExp[] =
+      this.configService.get('serialPortPatterns') || [];
+
     const devices = data.split('\n');
 
     const serialDevices = devices.filter((device) =>

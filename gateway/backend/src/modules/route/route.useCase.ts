@@ -15,11 +15,11 @@ export class RouteUseCase {
     private readonly messagesUseCase: MessagesUseCase,
   ) {
     messagesUseCase.registerEndpointOfGateway(
-      SupportedEventsParamsEndpoints.CREATE_ROUTE_ENDPOINT,
+      SupportedEventsParamsEndpoints.CREATE_ROUTE_SINK_ENDPOINT,
       this.createRouteEndpointMessageHandler.bind(this),
     );
     messagesUseCase.registerEndpointOfGateway(
-      SupportedEventsParamsEndpoints.GET_ROUTES_ENDPOINT,
+      SupportedEventsParamsEndpoints.GET_ALL_ROUTES_SINK_ENDPOINT,
       this.getRoutesMessageHandler.bind(this),
     );
   }
@@ -55,7 +55,7 @@ export class RouteUseCase {
 
     await this.messagesUseCase.emitNewMessage(
       {
-        endpointUUID: SupportedEventsParamsEndpoints.GET_ROUTES_ENDPOINT,
+        endpointUUID: SupportedEventsParamsEndpoints.GET_ALL_ROUTES_SINK_ENDPOINT,
         replyForMessageUUID: message.messageUUID,
         messageUUID: uuidv4(),
         parameters: [
@@ -67,7 +67,7 @@ export class RouteUseCase {
         ],
       },
       await this.endpointRepo.getOneByUUID(
-        SupportedEventsParamsEndpoints.GET_ROUTES_ENDPOINT,
+        SupportedEventsParamsEndpoints.GET_ALL_ROUTES_SINK_ENDPOINT,
       ),
     );
   }

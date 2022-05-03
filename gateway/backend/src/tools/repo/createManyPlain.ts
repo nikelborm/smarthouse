@@ -12,14 +12,14 @@ export async function createManyPlain<T extends EntityWithId>(
   validateExistingId({
     entities: newEntities,
     shouldIdExist: false,
-    errorText: messages.repo.common.cantCreateWithIds(entityName, newEntities),
+    errorText: messages.repo.common.cantCreateWithIds(newEntities, entityName),
   });
   // @ts-expect-error при создании мы не можем указать айди, поэтому мы его выпилили
   const entitiesWithOnlyIds = (await repo.insert(newEntities)).identifiers;
 
   if (entitiesWithOnlyIds.length !== newEntities.length)
     throw new BadRequestException(
-      messages.repo.common.cantCreateMany(entityName, newEntities),
+      messages.repo.common.cantCreateMany(newEntities, entityName),
     );
 
   return newEntities.map((newEntity, index) => ({

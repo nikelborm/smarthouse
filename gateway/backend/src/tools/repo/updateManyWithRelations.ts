@@ -14,8 +14,8 @@ export async function updateManyWithRelations<T extends EntityWithId>(
     entities: updatedEntities,
     shouldIdExist: true,
     errorText: messages.repo.common.cantUpdateWithoutIds(
-      entityName,
       updatedEntities,
+      entityName,
     ),
   });
 
@@ -26,9 +26,9 @@ export async function updateManyWithRelations<T extends EntityWithId>(
   if (notExistingEntityIds.length)
     throw new BadRequestException(
       messages.repo.common.cantUpdateManyNotFound(
-        entityName,
         wantedToUpdateEntityIds,
         notExistingEntityIds,
+        entityName,
       ),
     );
 
