@@ -3,6 +3,7 @@ export * from './areSetsEqual';
 export * from './assertThereAreNoDuplicateUUIDs';
 export * from './countValid';
 export * from './difference';
+export * from './getRedundantAndMissingsValues';
 export * from './groupBy';
 export * from './insertInChunks';
 export * from './intersectionOfArrays';

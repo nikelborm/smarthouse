@@ -1,4 +1,4 @@
-import { differenceBetweenSetsInArray } from 'src/tools';
+import { getRedundantAndMissingsValues } from 'src/tools';
 import { repo } from '../infrastructure';
 import { IEncryptionWorker } from './IEncryptionWorker';
 import * as localWorkersClasses from './workers';
@@ -28,7 +28,10 @@ export const EncryptionModuleInitializer = {
 
     const encryptionWorkerUUIDsFromCode = new Set(Object.keys(workersStore));
 
-    const workerUUIDsNeedToBeImplemented = differenceBetweenSetsInArray(
+    const {
+      missingValues: workerUUIDsNeedToBeImplemented,
+      redundantValues: workerUUIDsNeedToBeInserted,
+    } = getRedundantAndMissingsValues(
       encryptionWorkerUUIDsFromDatabase,
       encryptionWorkerUUIDsFromCode,
     );
@@ -38,11 +41,6 @@ export const EncryptionModuleInitializer = {
         `Database expects for some encryption workers need to be impelemented.
         Do it as soon as possible because, your devices required for these workers will not work without it`,
       );
-
-    const workerUUIDsNeedToBeInserted = differenceBetweenSetsInArray(
-      encryptionWorkerUUIDsFromCode,
-      encryptionWorkerUUIDsFromDatabase,
-    );
 
     if (workerUUIDsNeedToBeInserted.length)
       await encryptionWorkerRepo.createManyPlain(

@@ -12,8 +12,8 @@ import { repo } from '../infrastructure';
 import { EncryptionUseCase } from '../encryption';
 import {
   assertThereAreNoDuplicateUUIDs,
-  differenceBetweenSetsInArray,
   doesArraysIntersects,
+  getRedundantAndMissingsValues,
   remapToIndexedObject,
 } from 'src/tools';
 import { DataValidatorUseCase } from '../dataValidator';
@@ -276,12 +276,14 @@ export class ClientInitialHandshakeUseCase {
       ]),
     );
 
-    const grantedParameterUUIDs = eventParameters.map(({ uuid }) => uuid);
+    const parameterUUIDsSupportedByClient = eventParameters.map(
+      ({ uuid }) => uuid,
+    );
 
-    const unknownParametersUUIDsRequestedByEvents =
-      differenceBetweenSetsInArray(
+    const { missingValues: unknownParametersUUIDsRequestedByEvents } =
+      getRedundantAndMissingsValues(
         parameterUUIDsRequestedByEvents,
-        new Set(grantedParameterUUIDs),
+        parameterUUIDsSupportedByClient,
       );
 
     if (unknownParametersUUIDsRequestedByEvents.length)
@@ -293,14 +295,15 @@ export class ClientInitialHandshakeUseCase {
       routeEndpoints.map(({ eventUUID }) => eventUUID),
     );
 
-    const grantedEventUUIDs = events.map(({ uuid }) => uuid);
+    const eventUUIDsSupportedByClient = events.map(({ uuid }) => uuid);
 
-    const unknownEventsUUIDsRequestedByEndpoints = differenceBetweenSetsInArray(
-      eventUUIDsRequestedByEndpoints,
-      new Set(grantedEventUUIDs),
-    );
+    const { missingValues: unknownEventUUIDsRequestedByEndpoints } =
+      getRedundantAndMissingsValues(
+        eventUUIDsRequestedByEndpoints,
+        eventUUIDsSupportedByClient,
+      );
 
-    if (unknownEventsUUIDsRequestedByEndpoints.length)
+    if (unknownEventUUIDsRequestedByEndpoints.length)
       throw new Error(
         'Some events mentions parameters that does not exists in your supported parameters list',
       );

@@ -391,10 +391,6 @@ export class MessagesUseCase {
     const messageParametersUUIDsWithoutDuplicates = new Set(
       allMessageParametersUUIDs,
     );
-    console.log(
-      'messageParametersUUIDsWithoutDuplicates: ',
-      messageParametersUUIDsWithoutDuplicates,
-    );
 
     if (
       messageParametersUUIDsWithoutDuplicates.size <
@@ -404,11 +400,6 @@ export class MessagesUseCase {
 
     const redundantParametersUUIDs = differenceBetweenSetsInArray(
       messageParametersUUIDsWithoutDuplicates,
-      new Set(allEventParametersUUIDs),
-    );
-    console.log('redundantParametersUUIDs: ', redundantParametersUUIDs);
-    console.log(
-      'new Set(allEventParametersUUIDs): ',
       new Set(allEventParametersUUIDs),
     );
 
