@@ -11,7 +11,7 @@ export const WEBSOCKET_SERVICE_FACTORY_KEY = Symbol('websocketServiceFactory');
 export const WebsocketServiceFactory = {
   provide: WEBSOCKET_SERVICE_FACTORY_KEY,
   useFactory: async (configService: ConfigService) => {
-    let service;
+    let service: WebsocketService;
     return {
       create: function (config) {
         if (service) return service;

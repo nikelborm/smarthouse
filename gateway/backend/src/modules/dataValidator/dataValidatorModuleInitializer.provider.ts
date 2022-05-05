@@ -1,4 +1,4 @@
-import { differenceBetweenSetsInArray } from 'src/tools';
+import { getRedundantAndMissingsValues } from 'src/tools';
 import { repo } from '../infrastructure';
 import { IDataValidator } from './IDataValidator';
 import * as localValidatorsClasses from './validators';
@@ -29,7 +29,10 @@ export const DataValidatorModuleInitializer = {
 
     const validatorUUIDsFromCode = new Set(Object.keys(validatorsStore));
 
-    const validatorUUIDsNeedToBeImplemented = differenceBetweenSetsInArray(
+    const {
+      missingValues: validatorUUIDsNeedToBeImplemented,
+      redundantValues: validatorUUIDsNeedToBeInserted,
+    } = getRedundantAndMissingsValues(
       validatorUUIDsFromDatabase,
       validatorUUIDsFromCode,
     );
@@ -39,11 +42,6 @@ export const DataValidatorModuleInitializer = {
         `Database expects for some DataValidators need to be impelemented.
         Do it as soon as possible because, your devices required for these DataValidators will not work without it`,
       );
-
-    const validatorUUIDsNeedToBeInserted = differenceBetweenSetsInArray(
-      validatorUUIDsFromCode,
-      validatorUUIDsFromDatabase,
-    );
 
     if (validatorUUIDsNeedToBeInserted.length)
       await dataValidatorRepo.createManyPlain(
