@@ -22,7 +22,7 @@
     "csv": "^6.0.5",
     "dagre": "^0.8.5",
     "date-fns": "^2.21.3",
-    "eslint": "^8.13.0",
+    "eslint": "^9.26.0",
     "eslint-config-airbnb": "^19.0.4",
     "eslint-config-prettier": "^8.1.0",
     "eslint-import-resolver-typescript": "^2.7.1",
